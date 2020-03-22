@@ -38,3 +38,11 @@ impact_impact.xwbt
  
 Thumbs.db
 .DS_Store
+
+qt/.qmake.stash
+qt/Makefile
+*.o
+qt/moc_*
+qt/qrc_*
+qt/ui_*
+qt/kerberos.bin

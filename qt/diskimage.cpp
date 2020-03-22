@@ -890,7 +890,11 @@ int di_read(ImageFile *imgfile, unsigned char *buffer, int len) {
             imgfile->nextts.track = p[0];
             imgfile->nextts.sector = p[1];
             if (imgfile->nextts.track == 0) {
-                imgfile->buflen = imgfile->nextts.sector - 1;
+                if (imgfile->nextts.sector == 0) {
+		    imgfile->buflen = 254;
+                } else {
+		    imgfile->buflen = imgfile->nextts.sector - 1;
+		}
             } else {
                 imgfile->buflen = 254;
             }
