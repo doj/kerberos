@@ -1895,7 +1895,7 @@ void MainWindow::onDownloadD64()
 
                 // load data
                 QByteArray data;
-                int size = 174848;
+                int size = D64_FILE_SIZE;
                 int blocks = size / 256;
                 data.reserve(size);
                 for (int i = 0; i < blocks; i++) {
@@ -1943,7 +1943,7 @@ void MainWindow::onUploadD64()
         try {
             // save data
             QByteArray data;
-            int size = 174848;
+            int size = D64_FILE_SIZE;
             int blocks = size / 256;
             data.reserve(size);
             for (int i = 0; i < blocks; i++) {

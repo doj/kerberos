@@ -6,6 +6,7 @@
 #include <QFile>
 
 #define D64_FILE_SIZE 174848
+#define D64CRC_FILE_SIZE 175531
 
 class DiskData
 {

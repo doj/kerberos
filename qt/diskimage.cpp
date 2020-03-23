@@ -569,8 +569,8 @@ DiskImage *di_load_image(DiskData* diskData) {
 
     /* check image type */
     switch (filesize) {
-    case 174848: // standard D64
-    case 175531: // D64 with error info (which we just ignore)
+    case D64_FILE_SIZE: // standard D64
+    case D64CRC_FILE_SIZE: // D64 with error info (which we just ignore)
         di->type = D64;
         di->bam.track = 18;
         di->bam.sector = 0;
