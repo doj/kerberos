@@ -217,7 +217,7 @@ uint8_t ascii2petscii(uint8_t ascii)
 // second byte: length
 // last byte in the next data messages: CRC8 checksum
 
-static void sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
+static bool sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
 {
     try {
         ByteArray message;
@@ -233,20 +233,22 @@ static void sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
         */
     } catch (RtError& err) {
       std::cout << err.getMessage();
+      return false;
     }
+    return true;
 }
 
-static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+static bool sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
 {
-    sendNoteOnOff(channelBits | 0x80, note, velocity);
+    return sendNoteOnOff(channelBits | 0x80, note, velocity);
 }
 
-static void sendNoteOn(uint8_t channelBits, uint8_t note, uint8_t velocity)
+static bool sendNoteOn(uint8_t channelBits, uint8_t note, uint8_t velocity)
 {
-    sendNoteOnOff(channelBits | 0x90, note, velocity);
+    return sendNoteOnOff(channelBits | 0x90, note, velocity);
 }
 
-static void midiSendBytesWithFlags(int b1, int b2, int flags)
+static bool midiSendBytesWithFlags(int b1, int b2, int flags)
 {
     int channel = 0;
     if (b1 & 0x80) {
@@ -264,43 +266,49 @@ static void midiSendBytesWithFlags(int b1, int b2, int flags)
     }
 
     // alternate between note off and note on to avoid "running status" translation of some MIDI devices
+    bool ret;
     if (g_sendNoteOff) {
-        sendNoteOff(channel | flags, b1, b2);
+        ret = sendNoteOff(channel | flags, b1, b2);
     } else {
-        sendNoteOn(channel | flags, b1, b2);
+        ret = sendNoteOn(channel | flags, b1, b2);
     }
     g_sendNoteOff = !g_sendNoteOff;
+    return ret;
 }
 
-static void midiStartTransfer(uint8_t tag, uint8_t length)
+static bool midiStartTransfer(uint8_t tag, uint8_t length)
 {
     g_lastByte = -1;
-    midiSendBytesWithFlags(tag, length, 1 << 3);
+    return midiSendBytesWithFlags(tag, length, 1 << 3);
 }
 
-static void midiSendBytes(int b1, int b2)
+static bool midiSendBytes(int b1, int b2)
 {
-    midiSendBytesWithFlags(b1, b2, 0);
+    return midiSendBytesWithFlags(b1, b2, 0);
 }
 
-static void midiSendByte(uint8_t byte)
+static bool midiSendByte(uint8_t byte)
 {
+    bool ret = true;
     if (g_lastByte < 0) {
         g_lastByte = byte;
     } else {
-        midiSendBytes(g_lastByte, byte);
+        ret = midiSendBytes(g_lastByte, byte);
         g_lastByte = -1;
     }
+    return ret;
 }
 
-static void midiEndTransfer()
+static bool midiEndTransfer()
 {
+    bool ret = true;
     if (g_lastByte >= 0) {
-        midiSendBytes(g_lastByte, -1);
+        ret = midiSendBytes(g_lastByte, -1);
     }
+    return ret;
 }
 
-static void midiSendCommand(uint8_t tag, ByteArray data)
+static bool midiSendCommand(uint8_t tag, ByteArray data)
 {
     // init alternate note-on/off sending
     g_sendNoteOff = true;
@@ -316,7 +324,11 @@ static void midiSendCommand(uint8_t tag, ByteArray data)
     } else {
         length--;
     }
-    midiStartTransfer(tag, length);
+
+    if (! midiStartTransfer(tag, length)) {
+        fprintf(stderr, "midiSendCommand: midiStartTransfer(%02x, %zu) failed\n", tag, length);
+        return false;
+    }
 
     // init checksum
     crc8Init();
@@ -325,55 +337,65 @@ static void midiSendCommand(uint8_t tag, ByteArray data)
 
     // send data
     for (size_t i = 0; i < data.size(); i++) {
-        midiSendByte(data[i]);
+        if (! midiSendByte(data[i])) {
+            fprintf(stderr, "midiSendCommand: midiSendByte(%02x) failed\n", data[i]);
+            return false;
+        }
 #if defined(__LINUX_ALSASEQ__)
-
-	// send delay to fix ALSA message dropping
-	myUsleep(g_senddelay);
+        // send delay to fix ALSA message dropping
+        myUsleep(g_senddelay);
 #endif
         crc8Update(data[i]);
     }
 
     // send checksum
-    midiSendByte(g_crc);
+    if (! midiSendByte(g_crc)) {
+        fprintf(stderr, "midiSendCommand: midiSendByte(%02x) crc failed\n", g_crc);
+        return false;
+    }
 
     // end file transfer
-    midiEndTransfer();
+    if (! midiEndTransfer()) {
+        fprintf(stderr, "midiSendCommand: midiEndTransfer() failed\n");
+        return false;
+    }
+
+    return true;
 }
 
-static void midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
+static bool midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
     ByteArray b;
     b.push_back(b1);
     b.push_back(b2);
     b.push_back(b3);
     b.push_back(b4);
-    midiSendCommand(tag, b);
+    return midiSendCommand(tag, b);
 }
 
-static void midiSendByteCommand(uint8_t tag, uint8_t b1)
+static bool midiSendByteCommand(uint8_t tag, uint8_t b1)
 {
     ByteArray b;
     b.push_back(b1);
-    midiSendCommand(tag, b);
+    return midiSendCommand(tag, b);
 }
 
-static void midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2)
+static bool midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2)
 {
     ByteArray b;
     b.push_back(b1);
     b.push_back(b2);
-    midiSendCommand(tag, b);
+    return midiSendCommand(tag, b);
 }
 
-static void midiSendWordCommand(uint8_t tag, uint16_t word)
+static bool midiSendWordCommand(uint8_t tag, uint16_t word)
 {
-    midiSendCommand(tag, word & 0xff, word >> 8);
+    return midiSendCommand(tag, word & 0xff, word >> 8);
 }
 
-static void midiSendCommand(uint8_t tag)
+static bool midiSendCommand(uint8_t tag)
 {
-    midiSendCommand(tag, ByteArray());
+    return midiSendCommand(tag, ByteArray());
 }
 
 void blockToTrackSector(uint16_t block, uint8_t* track, uint8_t* sector)
@@ -705,18 +727,18 @@ void addString(ByteArray& data, QString string)
     data.push_back(0);
 }
 
-static void midiSendPrintCommand(QString string)
+static bool midiSendPrintCommand(QString string)
 {
     ByteArray data;
     addString(data, string);
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    return midiSendCommand(MIDI_COMMAND_PRINT, data);
 }
 
-static void midiSendNopCommand()
+static bool midiSendNopCommand()
 {
     ByteArray data;
     for (int j = 0; j < 256; j++) data.push_back(0);
-    midiSendCommand(MIDI_COMMAND_NOP, data);
+    return midiSendCommand(MIDI_COMMAND_NOP, data);
 }
 
 void MainWindow::onNoteOn()
@@ -795,41 +817,52 @@ static QString hexNumber8(uint32_t number)
 void MainWindow::onSelectFile()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Open PRG"), fileEdit->text(), tr("C64 files (*.prg *.bin *.crt)"));
-    if (filename.size() > 0) {
-        fileEdit->setText(filename);
+    loadFile(filename);
+}
 
-        if (filename.toLower().endsWith(".prg")) {
-            QString name;
-            QByteArray data = readFile(name);
-            if (data.size() > 2) {
-                int loadAddress = data[0] | data[1] << 8;
-                if (loadAddress == 0x4001) {
-                    if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Load address $4001, probably wrong C128 load address\nDo you want to change it to $1c01?"),
-                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+bool
+MainWindow::loadFile(QString filename)
+{
+    if (filename.isEmpty()) {
+        return false;
+    }
+    fileEdit->setText(filename);
+
+    if (filename.toLower().endsWith(".prg")) {
+        QString name;
+        QByteArray data = readFile(name);
+        if (data.size() < 3) {
+            return false;
+        }
+        if (data.size() > 2) {
+            int loadAddress = data[0] | data[1] << 8;
+            if (loadAddress == 0x4001) {
+                if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Load address $4001, probably wrong C128 load address\nDo you want to change it to $1c01?"),
+                                          QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                     {
                         loadAddress = 0x1c01;
                     }
-                }
+            }
 
-                // use start address 0 for BASIC programs
-                int startAddress = 0;
-                if (loadAddress != 0x0801 && loadAddress != 0x0800 && loadAddress != 0x1c01) {
-                    startAddress = loadAddress;
-                }
-                loadAddressEdit->setText(hexNumber4(loadAddress));
-                startAddressEdit->setText(hexNumber4(startAddress));
+            // use start address 0 for BASIC programs
+            int startAddress = 0;
+            if (loadAddress != 0x0801 && loadAddress != 0x0800 && loadAddress != 0x1c01) {
+                startAddress = loadAddress;
+            }
+            loadAddressEdit->setText(hexNumber4(loadAddress));
+            startAddressEdit->setText(hexNumber4(startAddress));
 
-                // test if C64 or C128 program
-                if (loadAddress == 0x1c01) {
-                    resetModeC64RadioButton->setChecked(false);
-                    resetModeC128RadioButton->setChecked(true);
-                } else {
-                    resetModeC64RadioButton->setChecked(true);
-                    resetModeC128RadioButton->setChecked(false);
-                }
+            // test if C64 or C128 program
+            if (loadAddress == 0x1c01) {
+                resetModeC64RadioButton->setChecked(false);
+                resetModeC128RadioButton->setChecked(true);
+            } else {
+                resetModeC64RadioButton->setChecked(true);
+                resetModeC128RadioButton->setChecked(false);
             }
         }
     }
+    return true;
 }
 
 static bool isBlock255(ByteArray block)
@@ -923,38 +956,50 @@ static void flashFile(QString name, QByteArray data, int startAddress)
     midiSendPrintCommand("waiting for next file");
 }
 
-static void sramUpload(QString name, QByteArray data, int startBank)
+static bool sramUpload(QString name, QByteArray data, int startBank)
 {
-    midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
-    midiSendNopCommand();
-    midiSendPrintCommand("receiving " + name.left(20) + "..." + NEWLINE);
-    midiSendNopCommand();
-    midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
+    if (! midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN)) return false;
+    if (! midiSendNopCommand()) return false;
+    if (! midiSendPrintCommand("receiving " + name.left(20) + "..." + NEWLINE)) return false;
+    if (! midiSendNopCommand()) return false;
+    if (! midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00)) return false;
     int bank = startBank;
     int full = data.size();
     int transferred = 0;
     int oldPercent = -1;
     while (data.size() > 0) {
-        midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, bank);
+        if (! midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, bank)) {
+            fprintf(stderr, "could not set RAM bank %i\n", bank);
+            return false;
+        }
         int size = data.size();
         if (size > 256) size = 256;
         ByteArray block;
         for (int j = 0; j < size; j++) block.push_back(data[j]);
-        midiSendCommand(MIDI_COMMAND_WRITE_RAM, block);
+        if (! midiSendCommand(MIDI_COMMAND_WRITE_RAM, block)) {
+            fprintf(stderr, "could not write block size %zu into bank %ii\n", block.size(), bank);
+            return false;
+        }
         data.remove(0, size);
         bank++;
         transferred += size;
         int percent = transferred * 100 / full;
         if (percent != oldPercent) {
-            midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
+            if (! midiSendByteCommand(MIDI_COMMAND_GOTOX, 0)) {
+                fprintf(stderr, "could not send command gotox\n");
+                return false;
+            }
             QString message = QString("").sprintf("%i%%", percent);
-            midiSendPrintCommand(message);
+            if (! midiSendPrintCommand(message)) {
+                fprintf(stderr, "could not print: %s\n", message.toUtf8().data());
+                return false;
+            }
             oldPercent = percent;
             showStatus("upload " + message);
         }
     }
     showStatus("upload done");
-    midiSendPrintCommand(NEWLINE);
+    return midiSendPrintCommand(NEWLINE);
 }
 
 QString MainWindow::getMidiOutInterfaceName()
@@ -1613,7 +1658,7 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
     return header;
 }
 
-void MainWindow::onUploadAndRunPrg()
+bool MainWindow::onUploadAndRunPrg()
 {
     if (!isMidiTransferInProgress()) {
         MidiTransferInProgress lock;
@@ -1621,12 +1666,14 @@ void MainWindow::onUploadAndRunPrg()
         QByteArray data = readFile(name);
         if (!name.toLower().endsWith(".prg")) {
             QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".prg-file required for PRG run"));
-            return;
+            return false;
         }
-        if (data.size() == 0) return;
+        if (data.size() == 0) {
+            return false;
+        }
         if (data.size() > 63486) {
             QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too big, max 63486 bytes"));
-            return;
+            return false;
         }
 
         // remove load address
@@ -1639,11 +1686,12 @@ void MainWindow::onUploadAndRunPrg()
         data.prepend(header);
 
         // transfer data
-        sramUpload(name, data, 256);
+        if (! sramUpload(name, data, 256)) return false;
 
         // start program
-        midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+        return midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
     }
+    return false;
 }
 
 void MainWindow::onListSlots()
@@ -2147,3 +2195,16 @@ void MainWindow::enableMidiTransferButtons(bool enable)
     downloadD64Button->setEnabled(enable);
     uploadD64Button->setEnabled(enable);
 }
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//

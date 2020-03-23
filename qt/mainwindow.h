@@ -24,9 +24,20 @@ public:
 	~MainWindow();
     void enableMidiTransferButtons(bool enable);
 
+    /**
+     * load a file.
+     * @param filename file name
+     * @return true if @p filename was successfully loaded.
+     * @return false upon failure.
+     */
+    bool loadFile(QString filename);
+
 protected:
     void customEvent(QEvent* event);
     void timerEvent(QTimerEvent *event);
+
+public slots:
+    bool onUploadAndRunPrg();
 
 private slots:
     void onSelectFile();
@@ -44,7 +55,6 @@ private slots:
     void onFlashBasicBin();
     void onFlashKernalBin();
     void onFlashMenuBin();
-    void onUploadAndRunPrg();
     void onListSlots();
     void onUploadBasicToRam();
     void onUploadKernalToRam();
@@ -98,5 +108,17 @@ private:
     ByteArray m_message;
 };
 
-
 #endif
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//
