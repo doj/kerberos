@@ -94,7 +94,7 @@ RtMidiInAlsa  g_midiIn( g_midiInInterfaceName );
 // delay in microseconds after each send command.
 // This is used to fix ALSA buffer overflow when
 // large amounts of data are transferred.
-static int g_senddelay = 400; 
+int g_senddelay = 800;
 
 #elif defined(__LINUX_JACK__)
 

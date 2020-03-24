@@ -7,6 +7,10 @@
 #include "mainwindow.h"
 #include "QDebug"
 
+#if defined(__LINUX_ALSASEQ__)
+extern int g_senddelay;
+#endif
+
 bool g_debugging = false;
 
 int main(int argc, char** argv)
@@ -22,7 +26,18 @@ int main(int argc, char** argv)
         if (arg == "debugging") {
             g_debugging = true;
         } else if (arg == "--help" || arg == "-h" || arg == "/?") {
-            printf("kerberos [--prg <program filename> [--transfer]] [debugging]\n");
+            printf("kerberos [--prg <program filename> [--transfer]] [debugging]");
+#if defined(__LINUX_ALSASEQ__)
+            printf(" [--delay <us>]");
+#endif
+            printf("\n\n");
+            printf("--prg <filename> will populate the \"Select file...\" dialog\n");
+            printf("                 add --transfer to immediately do \"Send PRG and start, no flash\"\n");
+#if defined(__LINUX_ALSASEQ__)
+            printf("--delay <us>  configures a delay in microseconds after sending a byte over MIDI.\n");
+            printf("              This is required to avoid lost bytes when sending MIDI data too fast.\n");
+            printf("              default: %i\n", g_senddelay);
+#endif
             return EXIT_SUCCESS;
         } else if (arg == "--prg" || arg == "/prg") {
             if (i == argc-1) {
@@ -45,6 +60,9 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
             }
+        } else {
+            fprintf(stderr, "unknown command line argument: %s\n", arg.c_str());
+            return EXIT_FAILURE;
         }
     }
 	w.show();
