@@ -24,6 +24,15 @@ public:
 	~MainWindow();
     void enableMidiTransferButtons(bool enable);
 
+    /// set the MIDI delay to @p us microseconds.
+    void setMidiDelay(int us);
+    /// @return configured MIDI delay
+    int getMidiDelay();
+    /// @return minimum MIDI delay
+    int minMidiDelay();
+    /// @return maximum MIDI delay
+    int maxMidiDelay();
+
     /**
      * load a file.
      * @param filename file name
@@ -71,6 +80,7 @@ private slots:
     void onRamAndFlashTests();
     void onDumpFlashButton();
     void onUploadFlashButton();
+    void onMidiDelayUSChange(int val);
 
 private:
     void calculateDriveAndType(int& drive, int& type);

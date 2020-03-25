@@ -603,6 +603,7 @@ MainWindow::MainWindow(QWidget *parent) :
     customKernalFromRamCheckbox->setChecked(settings.value("customKernalFromRamCheckbox", "0").toString() == "1");
     flashBlockEdit->setText(settings.value("loadAddressEdit", "b000").toString());
     g_flashDumpFilename = settings.value("flashDumpFilename", "").toString();
+    setMidiDelay(settings.value("midiDelayUS", "800").toString().toInt());
 
     connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
     connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
@@ -636,6 +637,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ramAndFlashTestsButton, SIGNAL(clicked()), this, SLOT(onRamAndFlashTests()));
     connect(dumpFlashButton, SIGNAL(clicked()), this, SLOT(onDumpFlashButton()));
     connect(uploadFlashButton, SIGNAL(clicked()), this, SLOT(onUploadFlashButton()));
+    connect(midiDelayUS, SIGNAL(valueChanged(int)), this, SLOT(onMidiDelayUSChange(int)));
 
     QString selectedName = getMidiInInterfaceName();
     int c = g_midiIn.getPortCount();
@@ -695,6 +697,11 @@ MainWindow::MainWindow(QWidget *parent) :
     } else {
         midiOutInterfacesComboBox->addItem("No MIDI-out interfaces found!");
     }
+
+#if !defined(__LINUX_ALSASEQ__)
+    midiDelayUS_label->hide();
+    midiDelayUS->hide();
+#endif
 }
 
 MainWindow::~MainWindow() {
@@ -714,6 +721,7 @@ MainWindow::~MainWindow() {
     settings.setValue("customKernalFromRamCheckbox", customKernalFromRamCheckbox->isChecked() ? "1" : "0");
     settings.setValue("flashBlockEdit", flashBlockEdit->text());
     settings.setValue("flashDumpFilename", g_flashDumpFilename);
+    settings.setValue("midiDelayUS", g_senddelay);
 }
 
 #define STATUS_NOTEOFF    0x80
@@ -2194,6 +2202,45 @@ void MainWindow::enableMidiTransferButtons(bool enable)
     readDirectoryButton->setEnabled(enable);
     downloadD64Button->setEnabled(enable);
     uploadD64Button->setEnabled(enable);
+
+#if defined(__LINUX_ALSASEQ__)
+    midiDelayUS->setEnabled(enable);
+#endif
+}
+
+void
+MainWindow::setMidiDelay(int us)
+{
+    assert(us >= minMidiDelay());
+    assert(us <= maxMidiDelay());
+    midiDelayUS->setValue(us);
+    g_senddelay = us;
+}
+
+void
+MainWindow::onMidiDelayUSChange(int val)
+{
+#if defined(__LINUX_ALSASEQ__)
+    g_senddelay = val;
+#endif
+}
+
+int
+MainWindow::getMidiDelay()
+{
+    return midiDelayUS->value();
+}
+
+int
+MainWindow::minMidiDelay()
+{
+    return midiDelayUS->minimum();
+}
+
+int
+MainWindow::maxMidiDelay()
+{
+    return midiDelayUS->maximum();
 }
 
 //

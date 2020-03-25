@@ -7,10 +7,6 @@
 #include "mainwindow.h"
 #include "QDebug"
 
-#if defined(__LINUX_ALSASEQ__)
-extern int g_senddelay;
-#endif
-
 bool g_debugging = false;
 
 int main(int argc, char** argv)
@@ -36,7 +32,8 @@ int main(int argc, char** argv)
 #if defined(__LINUX_ALSASEQ__)
             printf("--delay <us>  configures a delay in microseconds after sending a byte over MIDI.\n");
             printf("              This is required to avoid lost bytes when sending MIDI data too fast.\n");
-            printf("              default: %i\n", g_senddelay);
+            printf("              This command line argument is only available with Linux ALSA.\n");
+            printf("              default: %i, min: %i, max: %i\n", w.getMidiDelay(), w.minMidiDelay(), w.maxMidiDelay());
 #endif
             return EXIT_SUCCESS;
         } else if (arg == "--prg" || arg == "/prg") {
@@ -60,6 +57,20 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
             }
+#if defined(__LINUX_ALSASEQ__)
+        } else if (arg == "--delay") {
+            if (i < argc-1) {
+                const int d = atoi(argv[++i]);
+                if (d < w.minMidiDelay() || d > w.maxMidiDelay()) {
+                    fprintf(stderr, "MIDI delay out of range: %s -> %i\n", argv[i], d);
+                    return EXIT_FAILURE;
+                }
+                w.setMidiDelay(d);
+            } else {
+                fprintf(stderr, "missing argument for --delay\n");
+                return EXIT_FAILURE;
+            }
+#endif
         } else {
             fprintf(stderr, "unknown command line argument: %s\n", arg.c_str());
             return EXIT_FAILURE;
