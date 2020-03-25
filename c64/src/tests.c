@@ -11,7 +11,7 @@
 #include "menu.h"
 #include "tests.h"
 
-static uint8_t testRam()
+uint8_t testRam()
 {
 	uint16_t i;
 
@@ -97,7 +97,7 @@ static uint8_t testRam()
 	return 1;
 }
 
-static uint8_t testFlash()
+uint8_t testFlash()
 {
 	uint16_t i;
 	uint8_t j;
@@ -252,7 +252,7 @@ static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 	return 1;
 }
 
-static uint8_t testRamAsRom()
+uint8_t testRamAsRom()
 {
 	uint16_t i;
 

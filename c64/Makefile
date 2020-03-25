@@ -20,8 +20,6 @@ synthesizer_obj += obj/util_asm.o
 synthesizer_obj += obj/midi.o
 synthesizer_obj += obj/synthesizer.o
 
-obj := menu_obj synthesizer_obj
-
 ld_config := src/ld.cfg
 
 inc      := src
@@ -39,7 +37,7 @@ all: menu.bin synthesizer.prg
 headers := $(foreach dir, $(inc), $(wildcard $(dir)/*.h))
 
 obj/%.s: src/%.c $(headers) | obj
-	cc65 -O2 -g -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
+	cc65 -O -Or -g -t c64 -T $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
 obj/%.o: obj/%.s | obj c128-cart.bin
@@ -75,5 +73,5 @@ synthesizer.prg: synthesizer
 
 .PHONY: clean
 clean:
-	rm -f menu menu.map menu.prg menu.bin synthesizer synthesizer.prg
+	rm -f menu *.map *.prg menu.bin synthesizer c128-cart.bin vice.label
 	rm -rf obj
