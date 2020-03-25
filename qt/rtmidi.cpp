@@ -1045,13 +1045,13 @@ extern "C" void *alsaMidiHandler( void *ptr )
     doDecode = false;
     switch ( ev->type ) {
 
-                case SND_SEQ_EVENT_PORT_SUBSCRIBED:
+    case SND_SEQ_EVENT_PORT_SUBSCRIBED:
 #if defined(__RTMIDI_DEBUG__)
       std::cout << "RtMidiIn::alsaMidiHandler: port connection made!\n";
 #endif
       break;
 
-                case SND_SEQ_EVENT_PORT_UNSUBSCRIBED:
+    case SND_SEQ_EVENT_PORT_UNSUBSCRIBED:
 #if defined(__RTMIDI_DEBUG__)
       std::cerr << "RtMidiIn::alsaMidiHandler: port connection has closed!\n";
       std::cout << "sender = " << (int) ev->data.connect.sender.client << ":"
@@ -1074,7 +1074,7 @@ extern "C" void *alsaMidiHandler( void *ptr )
       if ( !( data->ignoreFlags & 0x04 ) ) doDecode = true;
       break;
 
-                case SND_SEQ_EVENT_SYSEX:
+    case SND_SEQ_EVENT_SYSEX:
       if ( (data->ignoreFlags & 0x01) ) break;
       if ( ev->data.ext.len > apiData->bufferSize ) {
         apiData->bufferSize = ev->data.ext.len;
@@ -1086,6 +1086,8 @@ extern "C" void *alsaMidiHandler( void *ptr )
           break;
         }
       }
+      doDecode = true;
+      break;
 
     default:
       doDecode = true;
