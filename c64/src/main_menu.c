@@ -64,7 +64,7 @@ static void c128startProgramInSram()
 	uint8_t* start = (uint8_t*) 0x8000;
 	uint16_t size = ((uint16_t) cart128EndPtr) - ((uint16_t) start);
 	uint16_t i;
-	
+
 	// copy 128 catridge code to RAM at $8000
 	for (i = 0; i < size; i++) {
 		uint16_t target = ((uint16_t) start) + i;
@@ -73,7 +73,7 @@ static void c128startProgramInSram()
 		}
 		g_ram[target & 0xff] = cart128Load[i];
 	}
-	
+
 	// CPLD generated reset for starting C128, with RAM as ROM enabled
 	CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
@@ -118,7 +118,7 @@ static void startProgramInSram(void)
 
 	// copy KERNAL replacement
 	if (controlByte & 4) copyRomReplacement((uint8_t*) 0xe000, (uint8_t*) 0xe000);
-		
+
 	// copy global MIDI tru settings, if requested
 	ramSetBank(256);
 	if (controlByte & 8) {
@@ -130,10 +130,10 @@ static void startProgramInSram(void)
 			g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00] |= MIDI_CONFIG_THRU_OUT_ON;
 		}
 	}
-	
+
 	// filter HIRAM hack, if C128, because the hardware doesn't allow it
 	filterHiramHack();
-		
+
 	// reset and start program in assembler
 	if (controlByte & 1) {
 		c128startProgramInSram();
@@ -146,7 +146,7 @@ static void startProgramInSram(void)
 		}
 		ramSetBank(256);
 		filterHiramHack();
-		
+
 		// start program
 		startProgram();
 	}
@@ -159,13 +159,13 @@ static void startProgramInSlot(uint8_t slot, uint8_t* controlBytesAndRegs)
 	static uint8_t blocks;
 	static uint16_t ramBank;
 	static uint8_t flashBank;
-	
+
 	// clear MIDI interrupts
 	midiIrqNmiTest();
 
-	// enable ROM at $8000	
+	// enable ROM at $8000
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
-	
+
 	// check for valid slot ID
 	flashBank = (slot + 6) * 8;
 	FLASH_ADDRESS_EXTENSION = flashBank;
@@ -194,7 +194,7 @@ static void startProgramInSlot(uint8_t slot, uint8_t* controlBytesAndRegs)
 			g_ram[i + 0x30] = controlBytesAndRegs[i];
 		}
 	}
-	
+
 	startProgramInSram();
 }
 
@@ -206,9 +206,9 @@ static void listSlots(void)
 	static uint8_t* adr;
 	clrscr();
 
-	// enable ROM at $8000	
+	// enable ROM at $8000
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
-	
+
 	for (i = 1; i < 26; i++) {
 		// 64 kb per slot, starting at $70000
 		FLASH_ADDRESS_EXTENSION = (i + 6) * 8;
@@ -418,7 +418,7 @@ void receiveMidiCommands(void)
 				receivedBytes++;
 			}
 		}
-		
+
 		// read data
 		disableInterrupts();
 		if (midiReadCommand(tag, length)) {
@@ -426,22 +426,22 @@ void receiveMidiCommands(void)
 			anyKey();
 			return;
 		}
-		
+
 		// evaluate command
 		switch (tag & 0x7f) {
 			case MIDI_COMMAND_SET_ADDRESS:
 				adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
 				break;
-				
+
 			case MIDI_COMMAND_SET_RAM_BANK:
 				ramSetBank(g_blockBuffer[0] | (g_blockBuffer[1] << 8));
 				break;
-				
+
 			case MIDI_COMMAND_SET_FLASH_BANK:
 				flashBank = g_blockBuffer[0];
 				flashSetBank(flashBank);
 				break;
-				
+
 			case MIDI_COMMAND_ERASE_FLASH_SECTOR:
 				flashEraseSector(adr);
 				break;
@@ -456,7 +456,7 @@ void receiveMidiCommands(void)
 					return;
 				}
 				break;
-				
+
 			case MIDI_COMMAND_WRITE_FLASH_FROM_SRAM:
 			{
 				cputs("flashing menu\r\n");
@@ -499,7 +499,7 @@ void receiveMidiCommands(void)
 				while (1);
 				break;
 			}
-			
+
 			case MIDI_COMMAND_COMPARE_FLASH:
 				FLASH_ADDRESS_EXTENSION = flashBank;
 				if (fastCompare256(adr)) {
@@ -513,19 +513,19 @@ void receiveMidiCommands(void)
 			case MIDI_COMMAND_WRITE_RAM:
 				memcpy(adr, g_blockBuffer, length + 1);
 				break;
-			
+
 			case MIDI_COMMAND_REDRAW_SCREEN:
 				redrawScreen();
 				break;
-			
+
 			case MIDI_COMMAND_PRINT:
 				cputs(g_blockBuffer);
 				break;
-			
+
 			case MIDI_COMMAND_GOTOX:
 				gotox(g_blockBuffer[0]);
 				break;
-			
+
 			case MIDI_COMMAND_START_SLOT_PROGRAM:
 				startProgramInSlot(g_blockBuffer[0], &g_blockBuffer[1]);
 				break;
@@ -534,7 +534,7 @@ void receiveMidiCommands(void)
 				ramSetBank(0);
 				startProgramInSram();
 				return;
-				
+
 			case MIDI_COMMAND_CHANGE_CONFIG:
 				for (i == 0; i <= length; i += 2) {
 					uint8_t key = g_blockBuffer[i];
@@ -547,7 +547,7 @@ void receiveMidiCommands(void)
 			case MIDI_COMMAND_LIST_SLOTS:
 				listSlots();
 				break;
-			
+
 			case MIDI_COMMAND_DRIVE_LOAD_BLOCK:
 				drive = g_blockBuffer[0];
 				number = g_blockBuffer[1];
@@ -623,7 +623,7 @@ void receiveMidiCommands(void)
 				FLASH_ADDRESS_EXTENSION = flashBank;
 				midiSendCommand(MIDI_COMMAND_PONG, 0, 0);
 				break;
-				
+
 			case MIDI_COMMAND_RAM_AND_FLASH_TESTS:
 				fastScreenRestore();
 				gotoxy(startX, startY);
@@ -647,7 +647,7 @@ void receiveMidiCommands(void)
 					puts("RAM test failed");
 				}
 				break;
-				
+
 			case MIDI_COMMAND_DUMP_FLASH:
 				for (block = 0; block < 256; block++) {
 					FLASH_ADDRESS_EXTENSION = block;
@@ -673,9 +673,9 @@ void menuStartProgramInSlot(void)
 
 	listSlots();
 
-	// disable ROM at $8000	
+	// disable ROM at $8000
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
-	
+
 	enableInterrupts();
 
 	for (;;) {
@@ -763,14 +763,14 @@ static void testMidi()
 	midiInit();
 	updateMidiConfig();
 
-	for (;;) {	
+	for (;;) {
 		showTitle("MIDI menu");
 		cputs("n: Send note on\r\n");
 		cputs("f: Send note off\r\n");
 		cputs("\r\n");
 		cputs("\x1f: Back\r\n");
 		cputs("\r\n");
-	
+
 		for (;;) {
 			if (wherey() > 23) break;
 			if (kbhit()) {
@@ -782,7 +782,7 @@ static void testMidi()
 						midiSendByte(60);
 						midiSendByte(100);
 						break;
-					
+
 					case 'f':
 						// note off
 						cputs("sending note off\r\n");
@@ -790,7 +790,7 @@ static void testMidi()
 						midiSendByte(60);
 						midiSendByte(0);
 						break;
-					
+
 					case LEFT_ARROW_KEY:  // left arrow
 						return;
 				}
@@ -844,7 +844,7 @@ static uint8_t sramBankingTest()
 	b0 = g_ram[0];
 	ramSetBank(1);
 	b1 = g_ram[0];
-	
+
 	return b0 == 0xaa && b1 == 0xbb;
 }
 
@@ -943,7 +943,7 @@ int main(void)
 
 	// disable run/stop-restore
 	*((uint8_t*)0x318) = 193;
-	
+
 	// disable Commodore-Shift for upper/lower case switch
 	*((uint8_t*)0x291) = 128;
 
@@ -953,26 +953,27 @@ int main(void)
 
 		// disable MIDI
 		MIDI_CONFIG = 0;
-	
+
 		// standard mode
 		CART_CONFIG = 0;
-	
+
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 
 		showTitle("Main Menu");
-		cputs("S: Start from slot\r\n");
-		cputs("E: EasyFlash start\r\n");
-		cputs("T: Transfer from PC/Mac\r\n");
-		cputs("C: Configuration\r\n");
-		cputs("H: Hardware reset / Kerberos off\r\n");
-		cputs("R: Reset to C64 BASIC prompt\r\n");
-		cputs("M: MIDI test\r\n");
-		cputs("K: Kerberos hardware test\r\n");
-		cputs("A: About\r\n");
-		cputs("\r\n");
+		cputs("  S: Start from slot\r\n");
+		cputs("0-9: start prg 0-9 from slot\r\n");
+		cputs("  E: EasyFlash start\r\n");
+		cputs("  T: Transfer from PC/Mac\r\n");
+		cputs("  C: Configuration\r\n");
+		cputs("  H: Hardware reset / Kerberos off\r\n");
+		cputs("  R: Reset to C64 BASIC prompt\r\n");
+		cputs("  M: MIDI test\r\n");
+		cputs("  K: Kerberos hardware test\r\n");
+		cputs("  A: About\r\n");
 		while (!kbhit());
-		switch (cgetc()) {
+		i = cgetc();
+		switch (i) {
 			case 's':
 				menuStartProgramInSlot();
 				break;
@@ -1001,7 +1002,65 @@ int main(void)
 			case 'a':
 				about();
 				break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                startProgramInSlot(i-'0', NULL);
+                break;
+            case '0':
+                startProgramInSlot(10, NULL);
+                break;
+            case '!':
+            case '+':
+                startProgramInSlot(11, NULL);
+                break;
+            case '"':
+            case '-':
+                startProgramInSlot(12, NULL);
+                break;
+            case '#':
+            case '|': // british pound
+                startProgramInSlot(13, NULL);
+                break;
+            case '$':
+                startProgramInSlot(14, NULL);
+                break;
+            case '%':
+                startProgramInSlot(15, NULL);
+                break;
+            case '&':
+                startProgramInSlot(16, NULL);
+                break;
+            case '\'':
+                startProgramInSlot(17, NULL);
+                break;
+            case '(':
+                startProgramInSlot(18, NULL);
+                break;
+            case ')':
+                startProgramInSlot(19, NULL);
+                break;
 		}
 	}
 	return 0;
 }
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// eval: (c-set-offset 'case-label '+)
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//
