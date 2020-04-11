@@ -24,46 +24,46 @@ MIDI_6850_RX      = $de03
 .export _midiIrqNmiTest
 _midiIrqNmiTest:
 		sei
-		
+
 		; disable MIDI NMI interrupts
 		lda #0
 		sta MIDI_CONFIG
-		
+
 		; set NMI routine
 		lda #<midiNmiTest
 		sta $0318
 		lda #>midiNmiTest
 		sta $0319
-		
+
 		; enable MIDI
 		lda #MIDI_CONFIG_ENABLE_ON
 		sta MIDI_CONFIG
-		
+
 		; Namesoft registers
 		lda #$02
 		sta MIDI_ADDRESS
-		
+
 		; reset 68B50
 		lda #3
 		sta MIDI_6850_CONTROL
-		
+
 		; init 68B50 with transmit interrupt enabled
 		lda #$35
 		sta MIDI_6850_CONTROL
-		
+
 		; reset flag
 		lda #0
 		sta midiIrqFlag
-		
+
 		; enable MIDI NMI interrupts
 		lda #(MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON)
 		sta MIDI_CONFIG
 		nop
-		
+
 		; test if NMI interrupt was called
 		lda midiIrqFlag
 		beq testEnd
-		
+
 		; disable IRQs
 		lda #MIDI_CONFIG_ENABLE_ON
 		sta MIDI_CONFIG
@@ -73,22 +73,22 @@ _midiIrqNmiTest:
 		sta $0314
 		lda #>midiIrqTest
 		sta $0315
-		
+
 		; switch off CIA1 IRQs
 		lda #127
 		sta $dc0d
-		
+
 		; clear pending CIA1 IRQs
 		lda $dc0d
-		
+
 		; reset 68B50
 		lda #3
 		sta MIDI_6850_CONTROL
-		
+
 		; init 68B50 with transmit interrupt enabled
 		lda #$35
 		sta MIDI_6850_CONTROL
-		
+
 		; reset flag
 		lda #0
 		sta midiIrqFlag
@@ -97,18 +97,18 @@ _midiIrqNmiTest:
 		lda #(MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_IRQ_ON)
 		sta MIDI_CONFIG
 		nop
-		
+
 		; test, if NMI was not called
 		lda midiIrqFlag
 		eor #1
 		beq testEnd
 		cli
 		nop
-		
+
 		; test if IRQ interrupt was called
 		lda midiIrqFlag
 		sei
-		
+
 testEnd:	ldx #0
 		stx MIDI_CONFIG
 		ldx #3
@@ -140,7 +140,7 @@ midiNmiTest:	pha
 		lda #3
 		sta MIDI_6850_CONTROL
 		jmp midiNmiEnd
-	
+
 		; NMI test handler
 midiIrqTest:	; set flag
 		lda #1
@@ -149,7 +149,7 @@ midiIrqTest:	; set flag
 		lda #3
 		sta MIDI_6850_CONTROL
 		jmp midiNmiEnd
-	
+
 ; =============================================================================
 ;
 ; Init MIDI interface for Namesoft emulation with NMI
@@ -165,44 +165,43 @@ midiIrqTest:	; set flag
 ; =============================================================================
 .export _midiInit
 _midiInit:	sei
-		
+
 		; disable MIDI NMI interrupts
 		lda #0
 		sta MIDI_CONFIG
-		
+
 		; clear ringbuffer
 		lda #0
 		sta midiReadIndex
 		sta midiWriteIndex
 		sta midiFifoMax
-		
+
 		; set NMI routine
 		lda #<midiNmi
 		sta $0318
 		lda #>midiNmi
 		sta $0319
-		
+
 		; enable MIDI NMI interrupts and set Namesoft configuration
 		lda #(MIDI_CONFIG_NMI_ON | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON)
 		sta MIDI_CONFIG
 		lda #$02
 		sta MIDI_ADDRESS
-		
+
 		; reset 68B50
 		lda #3
 		sta MIDI_6850_CONTROL
-		
+
 		; init 68B50
 		lda #$95
 		sta MIDI_6850_CONTROL
 		lda MIDI_6850_STATUS
 		lda MIDI_6850_RX
-		
+
 		cli
-		
+
 		rts
-	
-        
+
 ; =============================================================================
 ;
 ; Test for MIDI byte received.
@@ -218,8 +217,8 @@ _midiInit:	sei
 ; =============================================================================
 .export _midiByteReceived
 _midiByteReceived:
-		ldx #0
 		lda #0
+		tax
 		ldy midiReadIndex
 		cpy midiWriteIndex
 		beq noByte
@@ -240,8 +239,8 @@ noByte:		rts
 ;
 ; =============================================================================
 .export _midiReadByte
-_midiReadByte:	ldx #0
-		lda #0
+_midiReadByte:	lda #0
+		tax
 		ldy midiReadIndex
 		cpy midiWriteIndex
 		beq skip
@@ -264,8 +263,8 @@ skip:		rts
 ; =============================================================================
 .export _midiWaitAndReadByte
 _midiWaitAndReadByte:
-		ldx #0
 		lda #0
+		tax
 		ldy midiReadIndex
 wait:		cpy midiWriteIndex
 		beq wait
@@ -333,7 +332,7 @@ showStatus:	pha
 		jsr toHex
 		sta $7e3
 		stx $7e4
-	
+
 		pla
 		cmp midiFifoMax
 		bcc skipMax
@@ -351,7 +350,7 @@ midiNmi:	pha
 		pha
 		tya
 		pha
-		
+
 		; test if it was a NMI from the MIDI interface
 		lda MIDI_6850_STATUS
 		and #1
