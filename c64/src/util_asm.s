@@ -32,28 +32,28 @@ buffer = $c800
 _startEasyFlash:
 		; disable normal IRQ
 		sei
-		
+
 		; disable MIDI
 		lda #0
 		sta MIDI_CONFIG
-		
+
 		; first bank
 		lda #0
 		sta FLASH_ADDRESS_EXTENSION
 		sta RAM_ADDRESS_EXTENSION
-		
+
 		; enable A20 for second mb of flash
 		lda #ADDRESS_EXTENSION2_FLASH_A20
 		sta ADDRESS_EXTENSION2
-		
+
 		; enable Ultimax mode
 		lda #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
 		sta CART_CONTROL
-		
+
 		; enable EasyFlash mode and RAM
 		lda #(CART_CONFIG_EASYFLASH_ON)
 		sta CART_CONFIG
-		
+
 		; reset
 		jmp ($fffc)
 
@@ -182,12 +182,12 @@ _fastCompare256Ultimax:
 		ldy #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
 		sty CART_CONTROL
 
-		; compare		
+		; compare
 		jsr _fastCompare256
 
 		; standard mode
 		ldy #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW)
-		sty CART_CONTROL		
+		sty CART_CONTROL
 		rts
 
 ; =============================================================================
@@ -253,7 +253,7 @@ _disableInterrupts:
 		sei
 		rts
 
-        
+
 ; =============================================================================
 ;
 ; Enable interrupts (not as inline assembler to avoid optimizer reorder problems).
@@ -271,7 +271,7 @@ _disableInterrupts:
 _enableInterrupts:
 		cli
 		rts
-        
+
 ; =============================================================================
 ;
 ; Fill 256 bytes in BLOCK_BUFFER with random numbers.
@@ -324,11 +324,11 @@ _midiReadCommand:
 		sta cmdLength
 		jsr popa
 		sta cmdTag
-		
+
 		; init transfer variables
 		lda #0
 		sta dataCount
-		
+
 		; init CRC
 		lda #$ff
 		sta crc
@@ -336,20 +336,20 @@ _midiReadCommand:
 		jsr updateCrc
 		lda cmdLength
 		jsr updateCrc
-		
+
 		; check if there is data
 		lda cmdTag
 		and #$80
 		beq midiLoadData
 		lda cmdLength
 		sta __BLOCK_BUFFER_LOAD__
-		
+
 		; get checksum and return 0, if checksum is ok
 midiTestCrc:	jsr readByte
 		eor crc
 		ldx #0
 		rts
-		
+
 		; load data
 midiLoadData:	lda #0
 		sta ramIndex
@@ -365,7 +365,7 @@ midiNextByte:	jsr readByte
 		cmp cmdLength
 		bne midiNextByte
 		beq midiTestCrc
-		
+
 		; read MIDI message, decode bytes and return next byte
 readByte:	lda dataCount
 		bne nextByte
@@ -510,4 +510,3 @@ crc8Table:
 		.byte $2b, $75, $97, $c9, $4a, $14, $f6, $a8
 		.byte $74, $2a, $c8, $96, $15, $4b, $a9, $f7
 		.byte $b6, $e8, $0a, $54, $d7, $89, $6b, $35
-
