@@ -71,7 +71,11 @@ synthesizer: $(synthesizer_obj) $(ld_config)
 synthesizer.prg: synthesizer
 	cp -f synthesizer synthesizer.prg
 
-.PHONY: clean
-clean:
-	rm -f menu *.map *.prg menu.bin synthesizer c128-cart.bin vice.label
+.PHONY: clean gitclean
+
+clean:	gitclean
+	$(RM) *.prg menu.bin
+
+gitclean:
+	rm -f menu *.map synthesizer c128-cart.bin vice.label
 	rm -rf obj
