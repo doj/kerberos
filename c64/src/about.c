@@ -49,12 +49,12 @@ void about(void)
 	static uint8_t j;
 	static uint8_t restartCounter;
 	static uint8_t* adr;
-	
+
 	// standard mode, disable MIDI
 	CART_CONFIG = 0;
 	CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 	MIDI_CONFIG = 0;
-	
+
 	clrscr();
 	bgcolor(BACKGROUND_COLOR);
 	bordercolor(BACKGROUND_COLOR);
@@ -62,52 +62,52 @@ void about(void)
 
 	// set sprite pointers (starting at 0x2600)
 	for (i = 0; i < 4; i++) g_spritePointers[i] = 152 + i;
-	
+
 	// set y-positions
 	for (i = 0; i < 4; i++) {
 		g_vicBase[i * 2 + 1] = SPRITE_LOGO_Y;
 	}
-	
+
 	// set logo x-positions
 	g_vicBase[0] = SPRITE_LOGO_X;
 	g_vicBase[2] = SPRITE_LOGO_X + 48;
 	g_vicBase[4] = SPRITE_LOGO_X;
 	g_vicBase[6] = SPRITE_LOGO_X + 48;
-	
+
 	// first 2 sprites in black
 	g_vicBase[0x27] = 0;
 	g_vicBase[0x28] = 0;
-	
+
 	// second 2 sprites in orange
 	g_vicBase[0x29] = 8;
 	g_vicBase[0x2a] = 8;
-	
+
 	// double size
 	g_vicBase[0x17] = 0x0f;
 	g_vicBase[0x1d] = 0x0f;
-	
+
 	// enable sprites
 	g_vicBase[0x15] = 0x0f;
-	
+
 	textcolor(TEXT_COLOR);
 	gotoxy(0, 7);
-	cputs("-= C64/C128 MIDI and flash cartridge =-\r\n");
-	cputs("\r\n");
-	cputs("  top backers: Benjamin Schneider\r\n");
-	cputs("               Bram Crul\r\n");
-	cputs("               doj/cubic\r\n");
-	cputs("               freQvibez/Offence!\r\n");
-	cputs("               Mads Troest\r\n");
-	cputs("               Matt Shively\r\n");
-	cputs("               Remute (www.remute.org)\r\n");
-	cputs("               Robert Bernardo\r\n");
-	cputs("               Ziili/EXT\r\n");
-	cputs(" beta testers: Gert Borovcak\r\n");
-	cputs("               Marcel Andre\r\n");
-	cputs("    Cynthcart: Paul Slocum\r\n");
-	cputs("   this music: Vomitoxin by Svetlana\r\n");
-	cputs("hardware/code: Frank Buss\r\n\r\n");
-	cputs("       www.frank-buss.de/kerberos");
+	cputs("-= C64/C128 MIDI and flash cartridge =-\r\n"
+	"\r\n"
+	"top backers: Benjamin Schneider\r\n"
+	" Bram Crul\r\n"
+	" doj/cubic\r\n"
+	" freQvibez/Offence!\r\n"
+	" Mads Troest\r\n"
+	" Matt Shively\r\n"
+	" Remute (www.remute.org)\r\n"
+	" Robert Bernardo\r\n"
+	" Ziili/EXT\r\n"
+	"beta testers: Gert Borovcak\r\n"
+	" Marcel Andre\r\n"
+	"Cynthcart: Paul Slocum\r\n"
+	"this music: Vomitoxin by Svetlana\r\n"
+	"hardware/code: Frank Buss\r\n\r\n"
+	"www.frank-buss.de/kerberos");
 
 	musicInit();
 	sinIndex = 0;
@@ -165,5 +165,18 @@ void about(void)
 			__asm__ ("jmp $fce2");
 		}
 	}
-		
 }
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// eval: (c-set-offset 'case-label '+)
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//
