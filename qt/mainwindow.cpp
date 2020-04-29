@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 #include <QStandardItemModel>
+#include <QTime>
 #include "mainwindow.h"
 #include "RtMidi.h"
 #include "../c64/src/midi_commands.h"
@@ -19,7 +20,7 @@
 #define NEWLINE QString("\x0d\x0a")
 
 // 8 seconds
-#define MIDI_RECEIVE_TIMEOUT 80;
+#define MIDI_RECEIVE_TIMEOUT 80
 
 using namespace std;
 
@@ -507,7 +508,7 @@ void midiDriveSaveBlock(int driveType, int driveNumber, int block, unsigned char
         uint8_t track;
         uint8_t sector;
         blockToTrackSector(block, &track, &sector);
-        showStatus(QString("").sprintf("saving track %i sector %i", track, sector));
+        showStatus(QString("").asprintf("saving track %i sector %i", track, sector));
     }
     midiSendCommand(MIDI_COMMAND_DRIVE_SAVE_BLOCK, driveType, driveNumber, block & 0xff, block >> 8);
     ByteArray bdata;
@@ -533,10 +534,12 @@ void midiDriveSaveBlock(int driveType, int driveNumber, int block, unsigned char
 
 QByteArray midiDriveLoadBlock(int driveType, int driveNumber, int block)
 {
-    uint8_t track;
-    uint8_t sector;
-    blockToTrackSector(block, &track, &sector);
-    showStatus(QString("").sprintf("loading track %i sector %i", track, sector));
+    {
+        uint8_t track;
+        uint8_t sector;
+        blockToTrackSector(block, &track, &sector);
+        showStatus(QString("").asprintf("loading track %i sector %i", track, sector));
+    }
     midiSendCommand(MIDI_COMMAND_DRIVE_LOAD_BLOCK, driveType, driveNumber, block & 0xff, block >> 8);
 
     int tag;
@@ -910,7 +913,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
         if (percent > 100) percent = 100;
         if (percent != oldPercent && ((c64Address & 0x0fff) == 0)) {
             midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
-            QString message = QString("").sprintf("%i%%", percent);
+            QString message = QString("").asprintf("%i%%", percent);
             midiSendPrintCommand(message);
             oldPercent = percent;
             midiSendNopCommand();
@@ -945,7 +948,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
             if (percent > 100) percent = 100;
             if (percent != oldPercent) {
                 midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
-                QString message = QString("").sprintf("%i%%", percent);
+                QString message = QString("").asprintf("%i%%", percent);
                 midiSendPrintCommand(message);
                 oldPercent = percent;
                 midiSendNopCommand();
@@ -999,7 +1002,7 @@ static bool sramUpload(QString name, QByteArray data, int startBank)
                 fprintf(stderr, "could not send command gotox\n");
                 return false;
             }
-            QString message = QString("").sprintf("%i%%", percent);
+            QString message = QString("").asprintf("%i%%", percent);
             if (! midiSendPrintCommand(message)) {
                 fprintf(stderr, "could not print: %s\n", message.toUtf8().data());
                 return false;
@@ -1068,7 +1071,7 @@ void MainWindow::customEvent(QEvent *event)
             if (g_midiTransferInProgress) {
                 g_receivedMidiData.push_back(msg[i]);
             } else {
-                midiInDataTextEdit->append(QString("").sprintf("%02x", msg[i]));
+                midiInDataTextEdit->append(QString("").asprintf("%02x", msg[i]));
             }
         }
     }
@@ -1193,7 +1196,7 @@ void MainWindow::onDeletePrg()
                 int percent = transferred * 100 / full;
                 if (percent > 100) percent = 100;
                 midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
-                QString message = QString("").sprintf("%i%%", percent);
+                QString message = QString("").asprintf("%i%%", percent);
                 midiSendPrintCommand(message);
                 midiSendNopCommand();
                 showStatus("erasing " + message);
@@ -1865,6 +1868,8 @@ void MainWindow::onReadDirectory()
             // show title and free blocks
             remoteDiskName->setText(m_remoteD64Disk.getDirectoryTitle());
             remoteFreeBlocks->setText(QString::number(m_remoteD64Disk.getDirectoryFreeBlocks()));
+
+            midiSendCommand(MIDI_COMMAND_DRIVE_CLOSE_FD);
         } catch (RtError& err) {
             //qWarning() << QString::fromStdString(err.getMessage());
         }
@@ -1889,6 +1894,7 @@ void MainWindow::onDownloadD64()
         try {
             QString filename = QFileDialog::getSaveFileName(this, tr("Save as D64"), "", tr("D64 file (*.d64)"));
             if (filename.size() > 0) {
+                const auto t0 = QTime::currentTime();
                 // open file
                 QFile file(filename);
                 if (!file.open(QIODevice::WriteOnly)) {
@@ -1916,11 +1922,17 @@ void MainWindow::onDownloadD64()
                 // save data
                 file.write(data);
                 file.close();
+                const auto t1 = QTime::currentTime();
 
                 // show disk
                 openD64File(filename);
 
-                showStatus("download done");
+                QString msg = "download done, ";
+                msg += t0.secsTo(t1);
+                msg += " seconds";
+                showStatus(msg);
+
+                midiSendCommand(MIDI_COMMAND_DRIVE_CLOSE_FD);
             }
         } catch (RtError& err) {
             //qWarning() << QString::fromStdString(err.getMessage());
@@ -1930,7 +1942,9 @@ void MainWindow::onDownloadD64()
 
 void MainWindow::onUploadD64()
 {
+    int seconds = 0;
     if (!isMidiTransferInProgress()) {
+        const auto t0 = QTime::currentTime();
         MidiTransferInProgress lock;
         int drive;
         int type;
@@ -1964,13 +1978,20 @@ void MainWindow::onUploadD64()
         } catch (RtError& err) {
             //qWarning() << QString::fromStdString(err.getMessage());
         }
+        const auto t1 = QTime::currentTime();
+        seconds = t0.secsTo(t1);
     }
 
     try {
         // show disk
         onReadDirectory();
-
-        showStatus("upload done");
+        QString msg = "upload done";
+        if (seconds > 0) {
+            msg += ", ";
+            msg += seconds;
+            msg += " seconds";
+        }
+        showStatus(msg);
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
@@ -2119,7 +2140,7 @@ void MainWindow::onDumpFlashButton()
                     // add to data
                     data.append(blockData);
 
-                    showStatus(QString("").sprintf("saving block %i of 8192", i));
+                    showStatus(QString("").asprintf("saving block %i of 8192", i));
                 }
                 showStatus("read block done");
 
