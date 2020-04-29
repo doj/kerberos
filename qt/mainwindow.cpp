@@ -503,10 +503,12 @@ QByteArray midiReceiveCommand(int& tag)
 
 void midiDriveSaveBlock(int driveType, int driveNumber, int block, unsigned char* blockData)
 {
-    uint8_t track;
-    uint8_t sector;
-    blockToTrackSector(block, &track, &sector);
-    showStatus(QString("").sprintf("saving track %i sector %i", track, sector));
+    {
+        uint8_t track;
+        uint8_t sector;
+        blockToTrackSector(block, &track, &sector);
+        showStatus(QString("").sprintf("saving track %i sector %i", track, sector));
+    }
     midiSendCommand(MIDI_COMMAND_DRIVE_SAVE_BLOCK, driveType, driveNumber, block & 0xff, block >> 8);
     ByteArray bdata;
     for (int i = 0; i < 256; i++) bdata.push_back(blockData[i]);
