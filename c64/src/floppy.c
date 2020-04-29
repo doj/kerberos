@@ -1,78 +1,109 @@
-#include <stdint.h>
+#include "floppy.h"
 #include <stdio.h>
-#include <string.h>
 #include <cbm.h>
 #include <errno.h>
 
-const char* blockPointer0 = "b-p: 5 0";
-char buf[16];
+static const char* blockPointer0 = "b-p: 5 0";
+#define blockPointer0_len 8
+static char buf[16];
+static char fd2 = -1;
+static char fd5 = -1;
 
-uint8_t readBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data)
+uint8_t
+closeFileDescriptors(uint8_t err)
 {
-	uint8_t err;
+	cbm_close(2);
+	cbm_close(5);
+	fd2 = -1;
+	fd5 = -1;
+	return err;
+}
 
+static uint8_t __fastcall__
+checkOpen(uint8_t device)
+{
+	uint8_t err = 0;
+	if (fd2 != device) {
+		if (fd2 > 0) {
+			cbm_close(2);
+			fd2 = -1;
+		}
+		err = cbm_open(2, device, 15, "");
+		if (err) {
+			return closeFileDescriptors(err);
+		}
+		fd2 = device;
+	}
+	if (fd5 != device) {
+		if (fd5 > 0) {
+			cbm_close(5);
+			fd5 = -1;
+		}
+		err = cbm_open(5, device, 5, "#");
+		if (err) {
+			return closeFileDescriptors(err);
+		}
+		fd5 = device;
+	}
+	return 0;
+}
+
+uint8_t
+readBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data)
+{
+	int len;
 	// open command and data files
-	err = cbm_open(2, device, 15, "");
-	if (err) goto end;
-	err = cbm_open(5, device, 5, "#");
-	if (err) goto end;
+	uint8_t err = checkOpen(device);
+	if (err) {
+		return closeFileDescriptors(err);
+	}
 
 	// load data from disk to floppy RAM
-	sprintf(buf, "u1: 5 0 %i %i", track, sector);
-	if (cbm_write(2, buf, strlen(buf)) < 0) {
-		err = _oserror;
-		goto end;
+	len = sprintf(buf, "u1: 5 0 %i %i", track, sector);
+	if (cbm_write(2, buf, len) < 0) {
+		return closeFileDescriptors(_oserror);
 	}
 
 	// set block pointer to 0
-	if (cbm_write(2, blockPointer0, strlen(blockPointer0)) < 0) {
-		err = _oserror;
-		goto end;
+	if (cbm_write(2, blockPointer0, blockPointer0_len) < 0) {
+		return closeFileDescriptors(_oserror);
 	}
 
 	// read floppy RAM
 	if (cbm_read(5, data, 256) < 0) {
-		err = _oserror;
+		return closeFileDescriptors(_oserror);
 	}
 
-	// close files and return error status
-end:	cbm_close(5);
-	cbm_close(2);
-	return err;
+	return 0;
 }
 
-uint8_t writeBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data)
+uint8_t
+writeBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data)
 {
-	uint8_t err;
-
+	int len;
 	// open command and data files
-	err = cbm_open(2, device, 15, "");
-	if (err) goto end;
-	err = cbm_open(5, device, 5, "#");
-	if (err) goto end;
+	uint8_t err = checkOpen(device);
+	if (err) {
+		return closeFileDescriptors(err);
+	}
 
 	// set block pointer to 0
-	if (cbm_write(2, blockPointer0, strlen(blockPointer0)) < 0) {
-		err = _oserror;
-		goto end;
+	if (cbm_write(2, blockPointer0, blockPointer0_len) < 0) {
+		return closeFileDescriptors(_oserror);
 	}
 
 	// write data to floppy RAM
 	if (cbm_write(5, data, 256) < 0) {
-		err = _oserror;
-		goto end;
+		return closeFileDescriptors(_oserror);
 	}
 
 	// write data in floppy RAM to disk
-	sprintf(buf, "u2: 5 0 %i %i", track, sector);
-	if (cbm_write(2, buf, strlen(buf)) < 0) {
-		err = _oserror;
+	len = sprintf(buf, "u2: 5 0 %i %i", track, sector);
+	if (cbm_write(2, buf, len) < 0) {
+		return closeFileDescriptors(_oserror);
 	}
 
-	// close files and return error status
-end:	cbm_close(5);
-	cbm_close(2);
-	return err;
+	return 0;
 }
 
 //

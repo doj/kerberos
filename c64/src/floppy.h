@@ -11,4 +11,10 @@ uint8_t readBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data);
 // returns 0 if successful, otherwise _stroserror returns a clear text description of the error
 uint8_t writeBlock(uint8_t device, uint8_t track, uint8_t sector, uint8_t* data);
 
+/**
+ * close the file descriptors used for readBlock() and writeBlock().
+ * @return @p err.
+ */
+uint8_t closeFileDescriptors(uint8_t err);
+
 #endif

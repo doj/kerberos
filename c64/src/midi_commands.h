@@ -83,4 +83,7 @@
 // no data. Dumps the flash with MIDI_COMMAND_MEMORY_BLOCK responses
 #define MIDI_COMMAND_DUMP_FLASH 0x1a
 
+// no data. close all file descriptors
+#define MIDI_COMMAND_DRIVE_CLOSE_FD 0x1b
+
 #endif

@@ -50,7 +50,7 @@ static uint8_t isValidSlotId()
 	return memcmp(g_kerberosPrgSlotId, (uint8_t*) 0x8000, 16) == 0;
 }
 
-static void copyRomReplacement(uint8_t* dst, uint8_t* src)
+static void __fastcall__ copyRomReplacement(uint8_t* dst, uint8_t* src)
 {
 	uint8_t i;
 	uint16_t ramBank;
@@ -159,7 +159,7 @@ static void startProgramInSram(void)
 	}
 }
 
-static void startProgramInSlot(uint8_t slot, uint8_t* controlBytesAndRegs)
+static void __fastcall__ startProgramInSlot(uint8_t slot, uint8_t* controlBytesAndRegs)
 {
 	static uint8_t* adr;
 	static uint8_t i;
@@ -237,14 +237,14 @@ static void listSlots(void)
 	}
 }
 
-static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+static void __fastcall__ sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
 {
 	midiSendByte(0x80 | channelBits);
     midiSendByte(note);
     midiSendByte(velocity);
 }
 
-static void midiSendBytesWithFlags(uint8_t b1, int b2, uint8_t flags)
+static void __fastcall__ midiSendBytesWithFlags(uint8_t b1, int b2, uint8_t flags)
 {
     uint8_t channel = 0;
     if (b1 & 0x80) {
@@ -263,18 +263,18 @@ static void midiSendBytesWithFlags(uint8_t b1, int b2, uint8_t flags)
     sendNoteOff(channel | flags, b1, b2);
 }
 
-static void midiStartTransfer(uint8_t tag, uint8_t length)
+static void __fastcall__ midiStartTransfer(uint8_t tag, uint8_t length)
 {
     g_lastByte = -1;
     midiSendBytesWithFlags(tag, length, 1 << 3);
 }
 
-static void midiSendBytes(uint8_t b1, uint8_t b2)
+static void __fastcall__ midiSendBytes(uint8_t b1, uint8_t b2)
 {
     midiSendBytesWithFlags(b1, b2, 0);
 }
 
-static void midiSendByteNote(uint8_t byte)
+static void __fastcall__ midiSendByteNote(uint8_t byte)
 {
     if (g_lastByte < 0) {
         g_lastByte = byte;
@@ -291,7 +291,7 @@ static void midiEndTransfer()
     }
 }
 
-static void midiSendCommand(uint8_t tag, int size, const uint8_t* data)
+static void __fastcall__ midiSendCommand(uint8_t tag, int size, const uint8_t* data)
 {
     // start file transfer
     size_t length = size;
@@ -325,7 +325,7 @@ static void midiSendCommand(uint8_t tag, int size, const uint8_t* data)
     midiEndTransfer();
 }
 
-static void blockToTrackSector(uint16_t block, uint8_t* track, uint8_t* sector)
+static void __fastcall__ blockToTrackSector(uint16_t block, uint8_t* track, uint8_t* sector)
 {
 	static uint8_t trackStart[] = { 1, 18, 25, 31 };
 	static uint8_t trackEnd[] = { 17, 24, 30, 40 };
@@ -345,8 +345,9 @@ static void blockToTrackSector(uint16_t block, uint8_t* track, uint8_t* sector)
 	}
 }
 
-static void showTrackInfo()
+static void __fastcall__ showTrackInfo(const char *str)
 {
+    cputs(str);
 	cprintf("drv: %s\r\n", drive == DRIVE_INTERNAL ? "cartridge" : "floppy");
 	cprintf("num: %i\r\n", number);
 	cprintf("blk: %i\r\n", block);
@@ -372,7 +373,7 @@ static void redrawScreen()
 }
 
 static const char *FlashWriteError = "flash write error!";
-static void showFlashWriteError(int flashBank)
+static void __fastcall__ showFlashWriteError(int flashBank)
 {
     cprintf("\r\n%s\r\n"
             "flash bank: %i\r\n"
@@ -391,7 +392,7 @@ static void updateMidiConfig(void)
 
 static const char *BACK = "\x1f: Back\r\n";
 
-static void receiveMidiCommands(int received_byte)
+static void __fastcall__ receiveMidiCommands(int received_byte)
 {
 	static uint8_t b;
 	static uint8_t b0;
@@ -450,7 +451,8 @@ static void receiveMidiCommands(int received_byte)
 		}
 
 		// evaluate command
-		switch (tag & 0x7f) {
+        tag &= 0x7f;
+		switch (tag) {
 			case MIDI_COMMAND_SET_ADDRESS:
 				adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
 				break;
@@ -576,8 +578,7 @@ static void receiveMidiCommands(int received_byte)
 				blockToTrackSector(block, &track, &sector);
 				fastScreenRestore();
 				gotoxy(startX, startY);
-				cputs("read block\r\n");
-				showTrackInfo();
+				showTrackInfo("read block\r\n");
 				if (drive == DRIVE_INTERNAL) {
 					calculateCartridgeDiskAddress();
 					FLASH_ADDRESS_EXTENSION = flashBank;
@@ -604,8 +605,7 @@ static void receiveMidiCommands(int received_byte)
 				blockToTrackSector(block, &track, &sector);
 				fastScreenRestore();
 				gotoxy(startX, startY);
-				cputs("write block\r\n");
-				showTrackInfo();
+				showTrackInfo("write block\r\n");
 				if (drive == DRIVE_INTERNAL) {
 					calculateCartridgeDiskAddress();
 					flashSetBank(flashBank);
@@ -679,6 +679,14 @@ static void receiveMidiCommands(int received_byte)
 					}
 				}
 				cputs("\r\ndump done");
+				break;
+
+            case MIDI_COMMAND_DRIVE_CLOSE_FD:
+                closeFileDescriptors(0);
+                break;
+
+            default:
+                cprintf("\r\nunknown tag %02X\r\n", tag);
 				break;
 		}
 	}

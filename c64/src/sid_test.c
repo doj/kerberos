@@ -1,70 +1,63 @@
-/*
- 
-SID tester
- 
-compile command line (with CC65, see http://www.cc65.org )
- 
-cl65 -O -t c64 sid-tester.c -o sid-tester.prg
- 
-testing in WinVICE:
- 
-"\Program Files\WinVICE-2.4-x64\x64.exe" sid.prg
- 
-*/
- 
 #include <stdio.h>
 #include <conio.h>
 
 #include "menu.h"
 
-uint8_t* g_sidBase2 = (uint8_t*) 0xd400;
-uint8_t g_baseX, g_baseY;
-uint8_t g_waveforms = 15;
- 
-uint16_t g_freq[8] = {
+static uint8_t* g_sidBase2 = (uint8_t*) 0xd400;
+static uint8_t g_baseX, g_baseY;
+static uint8_t g_waveforms = 15;
+
+static uint16_t g_freq[8] = {
 	0x22cd,
 	0x3424,
 	0x459a
 };
- 
-void setVolume(uint8_t volume)
+
+static __fastcall__ void
+setVolume(uint8_t volume)
 {
 	g_sidBase2[24] = volume | (1 << 4);
 }
- 
-void initSid()
+
+static void
+initSid()
 {
 	uint8_t i = 0;
 	for (i = 0; i < 24; i++) g_sidBase2[i] = 0;
 	setVolume(15);
 }
- 
-void setFrequency(uint8_t voice, uint16_t freqIndex)
+
+static __fastcall__ void
+setFrequency(uint8_t voice, uint16_t freqIndex)
 {
 	uint16_t freq = g_freq[freqIndex];
 	g_sidBase2[7 * voice] = freq & 0xff;
 	g_sidBase2[7 * voice + 1] = freq >> 8;
 }
- 
-void setAdsr(uint8_t voice, uint8_t attack, uint8_t decay, uint8_t sustain, uint8_t release)
+
+static __fastcall__ void
+setAdsr(uint8_t voice, uint8_t attack, uint8_t decay, uint8_t sustain, uint8_t release)
 {
 	g_sidBase2[7 * voice + 5] = (attack << 4) | decay;
 	g_sidBase2[7 * voice + 6] = (sustain << 4) | release;
 }
- 
-void shortDelay()
+
+static void
+shortDelay()
 {
 	long i;
 	for (i = 0; i < 2; i++);
 }
- 
-void delay()
+
+static void
+delay()
 {
 	long i;
 	for (i = 0; i < 200; i++);
 }
- 
-void playOneTone(uint8_t voice, uint8_t freqIndex, uint8_t waveform)
+
+static __fastcall__ void
+playOneTone(uint8_t voice, uint8_t freqIndex, uint8_t waveform)
 {
 	g_sidBase2[7 * voice + 3] = 7;
 	setFrequency(voice, freqIndex);
@@ -74,14 +67,16 @@ void playOneTone(uint8_t voice, uint8_t freqIndex, uint8_t waveform)
 	g_sidBase2[7 * voice + 4] = waveform;
 }
 
-void playChord(uint8_t voice, uint8_t waveform)
+static __fastcall__ void
+playChord(uint8_t voice, uint8_t waveform)
 {
 	playOneTone(voice, 0, waveform);
 	playOneTone(voice, 1, waveform);
 	playOneTone(voice, 2, waveform);
 }
 
-void voiceTest(uint8_t voice)
+static __fastcall__ void
+voiceTest(uint8_t voice)
 {
 	cprintf("testing voice %i...\n", voice + 1);
 	if (g_waveforms & 1) playChord(voice, 1 << 4);
@@ -90,7 +85,8 @@ void voiceTest(uint8_t voice)
 	if (g_waveforms & 8) playChord(voice, 1 << 7);
 }
 
-int toHex(char c)
+static __fastcall__ int
+toHex(char c)
 {
 	if (c >= '0' && c <= '9') {
 		return c - '0';
@@ -101,7 +97,8 @@ int toHex(char c)
 	return -1;
 }
 
-uint16_t readHex()
+static __fastcall__ uint16_t
+readHex()
 {
 	uint16_t result = 0;
 	uint8_t i = 0;
@@ -124,7 +121,8 @@ uint16_t readHex()
 	return result;
 }
 
-void filterTest(char* info, uint8_t filter)
+static __fastcall__ void
+filterTest(char* info, uint8_t filter)
 {
 	uint8_t cutoff = 0;
 	uint8_t voice = 0;

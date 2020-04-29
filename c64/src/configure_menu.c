@@ -13,9 +13,10 @@
 #include "kerberos.h"
 #include "config.h"
 
-extern void waitVsync(void);
+void waitVsync(void);
 
-static void incrementDiskNumber(uint8_t id)
+static void __fastcall__
+incrementDiskNumber(uint8_t id)
 {
 	uint8_t number = getConfigValue(id);
 	number++;

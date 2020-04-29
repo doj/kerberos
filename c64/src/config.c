@@ -8,7 +8,8 @@
 
 static uint8_t g_configs[256];
 
-static uint8_t calculateChecksum()
+static uint8_t __fastcall__
+calculateChecksum()
 {
 	uint8_t i;
 	crc8Init();
@@ -38,7 +39,8 @@ void loadConfigs(void)
 	}
 }
 
-uint8_t saveConfigs(void)
+uint8_t
+saveConfigs(void)
 {
 	uint8_t* adr = (uint8_t*) 0x9000;
 	g_configs[255] = calculateChecksum();
@@ -50,7 +52,8 @@ uint8_t saveConfigs(void)
 	return fastCompare256(adr) == 0;
 }
 
-uint8_t getConfigValue(uint8_t key)
+uint8_t
+getConfigValue(uint8_t key)
 {
 	uint8_t i = 0;
 	for (i = 0; i < 253; i += 2) {
@@ -77,7 +80,8 @@ uint8_t getConfigValue(uint8_t key)
 	return 0;
 }
 
-void setConfigValue(uint8_t key, uint8_t value)
+void
+setConfigValue(uint8_t key, uint8_t value)
 {
 	uint8_t i = 0;
 	for (i = 0; i < 253; i += 2) {

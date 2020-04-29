@@ -1,7 +1,7 @@
 #include "crc8.h"
 #include "util.h"
 
-uint8_t g_crc;
+static uint8_t g_crc;
 
 void crc8Init(void)
 {

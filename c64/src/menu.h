@@ -20,8 +20,6 @@ extern uint8_t g_isC128;
 
 // functions
 void testMenu(void);
-
 void showTitle(char* subtitle);
-
 
 #endif

@@ -39,17 +39,17 @@ void noteOn(uint8_t channel, uint8_t note, uint8_t velocity)
 	cclear(39);
 	gotox(0);
 	cprintf("note on, channel: %i note: %02x, vel: %02x", channel, note, velocity);
-	
+
 	// only 8 octaves, 96 notes, defined
 	if (note > 96) return;
-		
-	// set frequency	
+
+	// set frequency
 	SID.v1.freq = freqTablePal[note];
-	
+
 	// ADSR
 	SID.v1.ad = 0x11;
 	SID.v1.sr = 0xd6;
-		
+
 	// start noise (0x81), square (0x41), sawtooth (0x21) or triangle (0x11), based on channel
 	waveform = (0x10 << (channel & 3)) | 1;
 	SID.v1.ctrl = waveform;
@@ -77,7 +77,7 @@ int main(void)
 		cputs("MIDI IRQ not working\r\n");
 		return -1;
 	}
-	
+
 	// init Namesoft MIDI emulation
 	midiInit();
 
@@ -85,13 +85,13 @@ int main(void)
 	cputs("simple synthesizer demo\r\n");
 	cputs("use MIDI channel 1-4 for waveform\r\n");
 	cputs("\r\n");
-	
+
 	// reset SID
 	memset(&SID, 0, sizeof(SID));
-	
+
 	// full amplitude
 	SID.amp = 15;
-	
+
 	// pulse width
 	SID.v1.pw = 0x100;
 
@@ -107,11 +107,11 @@ int main(void)
 			if (message & 0x80) break;
 		}
 		channel = message & 0xf;
-		
+
 		// get note and velocity
 		note = midiWaitAndReceiveByte();
 		velocity = midiWaitAndReceiveByte();
-		
+
 		// evaluate message
 		switch (message & 0xf0) {
 			case 0x80:
@@ -126,6 +126,6 @@ int main(void)
 				break;
 		}
 	}
-	
+
 	return 0;
 }
