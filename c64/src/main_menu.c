@@ -22,9 +22,10 @@
 #define USE_HARDWARE_TEST 1
 #define USE_MIDI_TEST 1
 
-extern void about(void);
-extern void configureSettings(void);
-extern void waitVsync(void);
+void about(void);
+void configureSettings(void);
+void waitVsync(void);
+static void showTitle(char* subtitle);
 
 uint8_t* g_vicBase = (uint8_t*) 0xd000;
 uint8_t* g_sidBase = (uint8_t*) 0xd400;
