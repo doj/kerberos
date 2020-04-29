@@ -25,7 +25,6 @@
 void about(void);
 void configureSettings(void);
 void waitVsync(void);
-static void showTitle(char* subtitle);
 
 uint8_t* g_vicBase = (uint8_t*) 0xd000;
 uint8_t* g_sidBase = (uint8_t*) 0xd400;
@@ -737,7 +736,7 @@ static void c64Reset()
 	 __asm__ ("jmp $fce2");
 }
 
-static void showTitle(char* subtitle)
+void showTitle(char* subtitle)
 {
 	bgcolor(BACKGROUND_COLOR);
 	bordercolor(BACKGROUND_COLOR);
