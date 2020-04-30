@@ -723,7 +723,9 @@ MainWindow::~MainWindow() {
     settings.setValue("customKernalFromRamCheckbox", customKernalFromRamCheckbox->isChecked() ? "1" : "0");
     settings.setValue("flashBlockEdit", flashBlockEdit->text());
     settings.setValue("flashDumpFilename", g_flashDumpFilename);
+#if defined(__LINUX_ALSASEQ__)
     settings.setValue("midiDelayUS", g_senddelay);
+#endif
 }
 
 #define STATUS_NOTEOFF    0x80
@@ -2216,7 +2218,9 @@ MainWindow::setMidiDelay(int us)
     assert(us >= minMidiDelay());
     assert(us <= maxMidiDelay());
     midiDelayUS->setValue(us);
+#if defined(__LINUX_ALSASEQ__)
     g_senddelay = us;
+#endif
 }
 
 void
