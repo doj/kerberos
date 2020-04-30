@@ -1,8 +1,17 @@
 #!/bin/sh
 
-export PATH=$PATH:/Users/gartenzwerg/Qt5.3.2/5.3/clang_64/bin/
-rm -rf kerberos.app
-rm -rf kerberos.dmg
+# setup environment variables for qt from homebrew
+export PATH="/usr/local/opt/qt/bin:$PATH"
+export LDFLAGS="-L/usr/local/opt/qt/lib"
+export CPPFLAGS="-I/usr/local/opt/qt/include"
+export PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+rm -rf kerberos.app kerberos.dmg
+set -e
 qmake
 make
 macdeployqt kerberos.app -dmg
+
+echo
+echo 'start the application with: $ open kerberos.app'
+echo 'clean up the build directory with: $ make distclean'
