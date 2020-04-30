@@ -396,7 +396,7 @@ nextByte:	dec dataCount
 
 updateCrc:	eor crc
 		tax
-		lda crc8Table,x
+		lda _crc8Table,x
 		sta crc
 		rts
 
@@ -477,7 +477,6 @@ ascii2Screencode:
 
 .export _crc8Table
 _crc8Table:
-crc8Table:
 		.byte $00, $5e, $bc, $e2, $61, $3f, $dd, $83
 		.byte $c2, $9c, $7e, $20, $a3, $fd, $1f, $41
 		.byte $9d, $c3, $21, $7f, $fc, $a2, $40, $1e
