@@ -4,7 +4,7 @@ APP=kerberos.app
 
 if [ "$1" = clean -o "$1" = distclean ] ; then
     make distclean
-    rm -rf $APP
+    rm -rf $APP kerberos.dmg
     exit 0
 fi
 
