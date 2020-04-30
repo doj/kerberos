@@ -589,7 +589,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!g_debugging) {
         debuggingGroupBox->setVisible(false);
     }
-    setWindowTitle(QCoreApplication::applicationName() + " V1.2");
+    setWindowTitle(QCoreApplication::applicationName() + " V1.3");
     startTimer(100);
 
     QSettings settings;

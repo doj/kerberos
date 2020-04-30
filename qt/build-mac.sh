@@ -15,9 +15,9 @@ export PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig:$PKG_CONFIG_PATH"
 rm -rf kerberos.app kerberos.dmg
 set -e
 qmake
-make
+make -j4
 macdeployqt kerberos.app -dmg
 
 echo
 echo 'start the application with: $ open kerberos.app'
-echo 'clean up the build directory with: $ make distclean'
+echo 'clean up the build directory with: $ ./build-mac.sh distclean'
