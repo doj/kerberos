@@ -589,7 +589,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!g_debugging) {
         debuggingGroupBox->setVisible(false);
     }
-    setWindowTitle(QCoreApplication::applicationName() + " V1.1");
+    setWindowTitle(QCoreApplication::applicationName() + " V1.2");
     startTimer(100);
 
     QSettings settings;
@@ -2247,6 +2247,7 @@ MainWindow::setMidiDelay(int us)
 void
 MainWindow::onMidiDelayUSChange(int val)
 {
+    (void)val;
 #if defined(__LINUX_ALSASEQ__)
     g_senddelay = val;
 #endif
