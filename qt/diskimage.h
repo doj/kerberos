@@ -26,6 +26,16 @@ typedef enum filetype {
 typedef struct ts {
   unsigned char track;
   unsigned char sector;
+  bool operator== (const ts &r) const
+  {
+    return track == r.track && sector == r.sector;
+  }
+  bool operator< (const ts &r) const
+  {
+    if (track < r.track) return true;
+    if (track > r.track) return false;
+    return sector < r.sector;
+  }
 } TrackSector;
 
 typedef struct diskimage {

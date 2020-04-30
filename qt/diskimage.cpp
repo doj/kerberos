@@ -2,11 +2,12 @@
  * this file is based on https://paradroid.automac.se/diskimage/
  */
 
+#include "diskimage.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "diskimage.h"
-
+#include <set>
+#include <unistd.h>
 
 typedef struct errormessage {
     signed int number;
@@ -226,20 +227,32 @@ int get_block_num(ImageType type, TrackSector ts) {
 /** @return a pointer to block data */
 unsigned char* get_ts_addr(DiskImage *di, TrackSector ts) {
     unsigned char *p = di->diskData->getData(get_block_num(di->type, ts) * 256);
-#if 1
-    FILE *f = fopen("/tmp/debug.txt", "a");
-    fprintf(f, "track: %i, sector: %i, address: %04x", ts.track, ts.sector, get_block_num(di->type, ts));
-    unsigned off = 0;
-    for(unsigned i = 0; i < 16; ++i)
+#if 0
+    static std::set<TrackSector> visited;
+    const char *filename = "/tmp/debug.txt";
+    errno = 0;
+    if (access(filename, F_OK) == 0 &&
+        errno == ENOENT)
         {
-            fprintf(f, "\n%02X: ", off);
-            for(unsigned j = 0; j < 16; ++j)
-                {
-                    fprintf(f, "\n%02X: ", p[off++]);
-                }
+            visited.clear();
         }
-    fprintf(f, "\n");
-    fclose(f);
+    if (visited.count(ts) == 0)
+        {
+            FILE *f = fopen(filename, "a");
+            fprintf(f, "track: %i, sector: %i, address: %04x", ts.track, ts.sector, get_block_num(di->type, ts));
+            unsigned off = 0;
+            for(unsigned i = 0; i < 16; ++i)
+                {
+                    fprintf(f, "\n%02X: ", off);
+                    for(unsigned j = 0; j < 16; ++j)
+                        {
+                            fprintf(f, "%02X ", p[off++]);
+                        }
+                }
+            fprintf(f, "\n");
+            fclose(f);
+            visited.insert(ts);
+        }
 #endif
     return p;
 }

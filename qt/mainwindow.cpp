@@ -22,17 +22,15 @@
 // 8 seconds
 #define MIDI_RECEIVE_TIMEOUT 80
 
-using namespace std;
-
-MainWindow* g_mainWindow;
+static MainWindow* g_mainWindow;
 
 extern bool g_debugging;
 
-bool g_sendNoteOff = true;
-bool g_midiTransferInProgress = false;
-bool g_testSequenceRunning = false;
+static bool g_sendNoteOff = true;
+static bool g_midiTransferInProgress = false;
+static bool g_testSequenceRunning = false;
 
-QString g_flashDumpFilename = "";
+static QString g_flashDumpFilename = "";
 
 class MidiTransferInProgress {
 public:
@@ -69,12 +67,12 @@ public:
 	}
 };
 
-void myMsleep(int milliseconds)
+static void myMsleep(int milliseconds)
 {
     Helper::msleep(milliseconds);
 }
 
-void myUsleep(int microseconds)
+static void myUsleep(int microseconds)
 {
     Helper::usleep(microseconds);
 }
@@ -88,6 +86,11 @@ const char g_kerberosMenuId[16] = { 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 
 #if defined(__MACOSX_CORE__)
 RtMidiOutCoreMidi g_midiOut( g_midiOutInterfaceName );;
 RtMidiInCoreMidi  g_midiIn( g_midiInInterfaceName );;
+
+// delay in microseconds after each send command.
+int g_senddelay = 800;
+#define HAVE_SENDDELAY 1
+
 #elif defined(__LINUX_ALSASEQ__)
 RtMidiOutAlsa g_midiOut( g_midiOutInterfaceName );
 RtMidiInAlsa  g_midiIn( g_midiInInterfaceName );
@@ -96,6 +99,7 @@ RtMidiInAlsa  g_midiIn( g_midiInInterfaceName );
 // This is used to fix ALSA buffer overflow when
 // large amounts of data are transferred.
 int g_senddelay = 800;
+#define HAVE_SENDDELAY 1
 
 #elif defined(__LINUX_JACK__)
 
@@ -118,7 +122,7 @@ static uint8_t g_crc;
 
 void showStatus(QString message)
 {
-    g_mainWindow->statusBar()->showMessage(message, 5000);
+    g_mainWindow->statusBar()->showMessage(message);
     QCoreApplication::processEvents();
 }
 
@@ -342,7 +346,7 @@ static bool midiSendCommand(uint8_t tag, ByteArray data)
             fprintf(stderr, "midiSendCommand: midiSendByte(%02x) failed\n", data[i]);
             return false;
         }
-#if defined(__LINUX_ALSASEQ__)
+#if defined(HAVE_SENDDELAY)
         // send delay to fix ALSA message dropping
         myUsleep(g_senddelay);
 #endif
@@ -608,7 +612,9 @@ MainWindow::MainWindow(QWidget *parent) :
     customKernalFromRamCheckbox->setChecked(settings.value("customKernalFromRamCheckbox", "0").toString() == "1");
     flashBlockEdit->setText(settings.value("loadAddressEdit", "b000").toString());
     g_flashDumpFilename = settings.value("flashDumpFilename", "").toString();
+#if HAVE_SENDDELAY
     setMidiDelay(settings.value("midiDelayUS", "800").toString().toInt());
+#endif
 
     connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
     connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
@@ -703,7 +709,7 @@ MainWindow::MainWindow(QWidget *parent) :
         midiOutInterfacesComboBox->addItem("No MIDI-out interfaces found!");
     }
 
-#if !defined(__LINUX_ALSASEQ__)
+#if !defined(HAVE_SENDDELAY)
     midiDelayUS_label->hide();
     midiDelayUS->hide();
 #endif
@@ -726,7 +732,7 @@ MainWindow::~MainWindow() {
     settings.setValue("customKernalFromRamCheckbox", customKernalFromRamCheckbox->isChecked() ? "1" : "0");
     settings.setValue("flashBlockEdit", flashBlockEdit->text());
     settings.setValue("flashDumpFilename", g_flashDumpFilename);
-#if defined(__LINUX_ALSASEQ__)
+#if defined(HAVE_SENDDELAY)
     settings.setValue("midiDelayUS", g_senddelay);
 #endif
 }
@@ -1990,7 +1996,7 @@ void MainWindow::onUploadD64()
         QString msg = "upload done";
         if (seconds > 0) {
             msg += ", ";
-            msg += seconds;
+            msg += QString().setNum(seconds);
             msg += " seconds";
         }
         showStatus(msg);
@@ -2228,7 +2234,7 @@ void MainWindow::enableMidiTransferButtons(bool enable)
     downloadD64Button->setEnabled(enable);
     uploadD64Button->setEnabled(enable);
 
-#if defined(__LINUX_ALSASEQ__)
+#if defined(HAVE_SENDDELAY)
     midiDelayUS->setEnabled(enable);
 #endif
 }
@@ -2236,10 +2242,11 @@ void MainWindow::enableMidiTransferButtons(bool enable)
 void
 MainWindow::setMidiDelay(int us)
 {
+    (void)us;
+#if defined(HAVE_SENDDELAY)
     assert(us >= minMidiDelay());
     assert(us <= maxMidiDelay());
     midiDelayUS->setValue(us);
-#if defined(__LINUX_ALSASEQ__)
     g_senddelay = us;
 #endif
 }
@@ -2248,7 +2255,7 @@ void
 MainWindow::onMidiDelayUSChange(int val)
 {
     (void)val;
-#if defined(__LINUX_ALSASEQ__)
+#if defined(HAVE_SENDDELAY)
     g_senddelay = val;
 #endif
 }
@@ -2256,19 +2263,31 @@ MainWindow::onMidiDelayUSChange(int val)
 int
 MainWindow::getMidiDelay()
 {
+#if defined(HAVE_SENDDELAY)
     return midiDelayUS->value();
+#else
+    return 0;
+#endif
 }
 
 int
 MainWindow::minMidiDelay()
 {
+#if defined(HAVE_SENDDELAY)
     return midiDelayUS->minimum();
+#else
+    return 0;
+#endif
 }
 
 int
 MainWindow::maxMidiDelay()
 {
+#if defined(HAVE_SENDDELAY)
     return midiDelayUS->maximum();
+#else
+    return 0;
+#endif
 }
 
 //
