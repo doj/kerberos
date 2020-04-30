@@ -225,11 +225,23 @@ int get_block_num(ImageType type, TrackSector ts) {
 
 /** @return a pointer to block data */
 unsigned char* get_ts_addr(DiskImage *di, TrackSector ts) {
-#if 0
-    printf("track: %i, sector: %i, address: %04x\n",ts.track,ts.sector,get_block_num(di->type, ts));
-    fflush(stdout);
+    unsigned char *p = di->diskData->getData(get_block_num(di->type, ts) * 256);
+#if 1
+    FILE *f = fopen("/tmp/debug.txt", "a");
+    fprintf(f, "track: %i, sector: %i, address: %04x", ts.track, ts.sector, get_block_num(di->type, ts));
+    unsigned off = 0;
+    for(unsigned i = 0; i < 16; ++i)
+        {
+            fprintf(f, "\n%02X: ", off);
+            for(unsigned j = 0; j < 16; ++j)
+                {
+                    fprintf(f, "\n%02X: ", p[off++]);
+                }
+        }
+    fprintf(f, "\n");
+    fclose(f);
 #endif
-    return di->diskData->getData(get_block_num(di->type, ts) * 256);
+    return p;
 }
 
 
@@ -822,6 +834,7 @@ ImageFile *di_open(DiskImage *di, const unsigned char *rawname, FileType type, c
             imgfile->mode = 'r';
             imgfile->ts = rde->startts;
             if (imgfile->ts.track > di_tracks(di->type)) {
+                free(imgfile);
                 return(NULL);
             }
             p = get_ts_addr(di, rde->startts);
@@ -897,10 +910,10 @@ int di_read(ImageFile *imgfile, unsigned char *buffer, int len) {
             imgfile->nextts.sector = p[1];
             if (imgfile->nextts.track == 0) {
                 if (imgfile->nextts.sector == 0) {
-		    imgfile->buflen = 254;
+                    imgfile->buflen = 254;
                 } else {
-		    imgfile->buflen = imgfile->nextts.sector - 1;
-		}
+                    imgfile->buflen = imgfile->nextts.sector - 1;
+                }
             } else {
                 imgfile->buflen = 254;
             }

@@ -46,7 +46,7 @@ void ptoa(unsigned char *s) {
 
 bool D64Disk::readDirectory()
 {
-    static const char *ftype[] = {
+    static const char *ftype[8] = {
         "del",
         "seq",
         "prg",
