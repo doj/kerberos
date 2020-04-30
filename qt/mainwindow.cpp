@@ -82,30 +82,26 @@ const char* g_midiOutInterfaceName = "Kerberos MIDI Out";
 
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
 const char g_kerberosMenuId[16] = { 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 78, 85, 32, 73, 68 };
+// delay in microseconds after each send command.
+// This is used to fix ALSA buffer overflow when
+// large amounts of data are transferred.
+static int g_senddelay = 800;
 
 #if defined(__MACOSX_CORE__)
 RtMidiOutCoreMidi g_midiOut( g_midiOutInterfaceName );;
 RtMidiInCoreMidi  g_midiIn( g_midiInInterfaceName );;
-
-// delay in microseconds after each send command.
-int g_senddelay = 800;
 #define HAVE_SENDDELAY 1
 
 #elif defined(__LINUX_ALSASEQ__)
 RtMidiOutAlsa g_midiOut( g_midiOutInterfaceName );
 RtMidiInAlsa  g_midiIn( g_midiInInterfaceName );
-
-// delay in microseconds after each send command.
-// This is used to fix ALSA buffer overflow when
-// large amounts of data are transferred.
-int g_senddelay = 800;
 #define HAVE_SENDDELAY 1
 
 #elif defined(__LINUX_JACK__)
-
 // Not tested yet
 RtMidiOutJack g_midiOut( g_midiOutInterfaceName );;
 RtMidiInJack  g_midiIn( g_midiInInterfaceName );;
+
 #else
 RtMidiOutWinMM g_midiOut( g_midiOutInterfaceName );;
 RtMidiInWinMM  g_midiIn( g_midiInInterfaceName );;
@@ -126,12 +122,12 @@ void showStatus(QString message)
     QCoreApplication::processEvents();
 }
 
-void crc8Init()
+static void crc8Init()
 {
     g_crc = 0xff;
 }
 
-uint8_t crc8Update(uint8_t data)
+static uint8_t crc8Update(uint8_t data)
 {
     static const uint8_t crcTable[256] = {
         0x00, 0x5e, 0xbc, 0xe2, 0x61, 0x3f, 0xdd, 0x83,
@@ -171,7 +167,7 @@ uint8_t crc8Update(uint8_t data)
     return g_crc;
 }
 
-uint8_t ascii2petscii(uint8_t ascii)
+static uint8_t ascii2petscii(uint8_t ascii)
 {
     static const uint8_t table[256] = {
         0, 1, 2, 3, 4, 5, 6, 7,
@@ -1707,7 +1703,13 @@ bool MainWindow::onUploadAndRunPrg()
         data.prepend(header);
 
         // transfer data
+        const auto t0 = QTime::currentTime();
         if (! sramUpload(name, data, 256)) return false;
+        const auto t1 = QTime::currentTime();
+        QString msg = "transfer done, ";
+        msg += QString().setNum(t0.secsTo(t1));
+        msg += " seconds";
+        showStatus(msg);
 
         // start program
         return midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
@@ -1936,7 +1938,7 @@ void MainWindow::onDownloadD64()
                 openD64File(filename);
 
                 QString msg = "download done, ";
-                msg += t0.secsTo(t1);
+                msg += QString().setNum(t0.secsTo(t1));
                 msg += " seconds";
                 showStatus(msg);
 
@@ -1950,6 +1952,7 @@ void MainWindow::onDownloadD64()
 
 void MainWindow::onUploadD64()
 {
+    const int old_senddelay = g_senddelay;
     int seconds = 0;
     if (!isMidiTransferInProgress()) {
         const auto t0 = QTime::currentTime();
@@ -1973,6 +1976,9 @@ void MainWindow::onUploadD64()
             return;
         }
         try {
+#if defined(__MACOSX_CORE__)
+            g_senddelay = 0;
+#endif
             // save data
             QByteArray data;
             int size = D64_FILE_SIZE;
@@ -1988,6 +1994,10 @@ void MainWindow::onUploadD64()
         }
         const auto t1 = QTime::currentTime();
         seconds = t0.secsTo(t1);
+
+#if defined(__MACOSX_CORE__)
+        g_senddelay = old_senddelay;
+#endif
     }
 
     try {
