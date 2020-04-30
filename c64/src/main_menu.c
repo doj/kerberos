@@ -347,12 +347,18 @@ static void __fastcall__ blockToTrackSector(uint16_t block, uint8_t* track, uint
 
 static void __fastcall__ showTrackInfo(const char *str)
 {
-    cputs(str);
-	cprintf("drv: %s\r\n", drive == DRIVE_INTERNAL ? "cartridge" : "floppy");
-	cprintf("num: %i\r\n", number);
-	cprintf("blk: %i\r\n", block);
-	cprintf("trk: %i\r\n", track);
-	cprintf("sec: %i\r\n", sector);
+	cprintf("%s\r\n"
+            "drv: %s\r\n"
+            "num: %i\r\n"
+            "blk: %i\r\n"
+            "trk: %i\r\n"
+            "sec: %i\r\n"
+            , str
+            , drive == DRIVE_INTERNAL ? "cartridge" : "floppy"
+            , number
+            , block
+            , track
+            , sector);
 }
 
 static void calculateCartridgeDiskAddress()
@@ -578,7 +584,7 @@ static void __fastcall__ receiveMidiCommands(int received_byte)
 				blockToTrackSector(block, &track, &sector);
 				fastScreenRestore();
 				gotoxy(startX, startY);
-				showTrackInfo("read block\r\n");
+				showTrackInfo("read block");
 				if (drive == DRIVE_INTERNAL) {
 					calculateCartridgeDiskAddress();
 					FLASH_ADDRESS_EXTENSION = flashBank;
@@ -605,7 +611,7 @@ static void __fastcall__ receiveMidiCommands(int received_byte)
 				blockToTrackSector(block, &track, &sector);
 				fastScreenRestore();
 				gotoxy(startX, startY);
-				showTrackInfo("write block\r\n");
+				showTrackInfo("write block");
 				if (drive == DRIVE_INTERNAL) {
 					calculateCartridgeDiskAddress();
 					flashSetBank(flashBank);
@@ -751,7 +757,7 @@ void showTitle(char* subtitle)
 	clrscr();
 	gotoxy((40-20-strlen(subtitle))/2, 0);
 	textcolor(CAPTION_COLOR);
-	cputs("Kerberos Menu V1.2 - ");
+	cputs("Kerberos Menu V1.3 - ");
 	cputs(subtitle);
 	textcolor(TEXT_COLOR);
 	cputs("\r\n\r\n");
