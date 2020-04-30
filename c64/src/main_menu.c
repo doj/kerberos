@@ -415,11 +415,11 @@ static void __fastcall__ receiveMidiCommands(int received_byte)
     } else {
 		receivedBytes = 0;
         showTitle("PC/Mac link");
-        cputs(BACK);
-        startX = wherex();
-        startY = wherey();
-        fastScreenBackup();
     }
+    cputs(BACK);
+    startX = wherex();
+    startY = wherey();
+    fastScreenBackup();
 
 	for (;;) {
 		enableInterrupts();
@@ -555,6 +555,9 @@ static void __fastcall__ receiveMidiCommands(int received_byte)
 			case MIDI_COMMAND_GOTOX:
 				gotox(g_blockBuffer[0]);
 				break;
+
+            case MIDI_COMMAND_NOP:
+                break;
 
 			case MIDI_COMMAND_START_SLOT_PROGRAM:
 				startProgramInSlot(g_blockBuffer[0], &g_blockBuffer[1]);
