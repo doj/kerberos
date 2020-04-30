@@ -1,3 +1,7 @@
+/** @file
+ * this file is based on https://paradroid.automac.se/diskimage/
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

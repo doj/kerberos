@@ -1,3 +1,7 @@
+/** @file
+ * this file is based on https://paradroid.automac.se/diskimage/
+ */
+
 #ifndef DISK_IMAGE_H
 #define DISK_IMAGE_H
 
