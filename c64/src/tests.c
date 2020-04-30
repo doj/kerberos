@@ -23,7 +23,7 @@ uint8_t testRam()
 		ramSetBank(i);
 		memcpy(g_ram, g_blockBuffer, 256);
 	}
-	
+
 	gotox(0);
 	cputs("RAM 0xff verify...\r\n");
 	srand(1);
@@ -49,7 +49,7 @@ uint8_t testRam()
 		rand256Block();
 		memcpy(g_ram, g_blockBuffer, 256);
 	}
-	
+
 	gotox(0);
 	cputs("RAM random verify...\r\n");
 	srand(1);
@@ -75,7 +75,7 @@ uint8_t testRam()
 		ramSetBank(i);
 		memcpy(g_ram, g_blockBuffer, 256);
 	}
-	
+
 	gotox(0);
 	cputs("RAM 0 verify...\r\n");
 	srand(1);
@@ -114,8 +114,8 @@ uint8_t testFlash()
 		enableInterrupts();
 		return 0;
 	}
-	cputs("flash id ok\r\n");
-	cputs("\r\n");
+	cputs("flash id ok\r\n"
+	      "\r\n");
 	lastBank = FLASH_BANKS;
 
 	disableInterrupts();
@@ -244,8 +244,10 @@ static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
-		cprintf("RAM error in bank 0x%04x\r\n", bank);
-		cprintf("test: %s\r\n", test);
+		cprintf("RAM error in bank 0x%04x\r\n"
+			"test: %s\r\n"
+			, bank
+			, test);
 		enableInterrupts();
 		return 0;
 	}
@@ -258,7 +260,7 @@ uint8_t testRamAsRom()
 
 	disableInterrupts();
 	cputs("write random data in RAM...\r\n");
-	
+
 	// fill external RAM for ROM hack test
 	srand(1);
 	for (i = 0; i < 256; i++) {
@@ -289,7 +291,7 @@ uint8_t testRamAsRom()
 
 		// enable special cartridge RAM as ROM mode
 		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
-	
+
 		// enable cartridge ROM at $8000 and $a000, which is mapped to the cartridge RAM
 		CART_CONTROL = CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_LOW;
 
@@ -304,13 +306,13 @@ uint8_t testRamAsRom()
 
 		// enable special cartridge RAM as ROM mode and BASIC hack
 		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_BASIC_HACK_ON;
-	
+
 		// test BASIC
 		if (!testRomAsRamCompare(i + 0xa0, "0xa000, BASIC hack")) return 0;
 
 		// enable special cartridge RAM as ROM mode and KERNAL hack
 		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
-	
+
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return 0;
 
@@ -318,16 +320,16 @@ uint8_t testRamAsRom()
 		if (!g_isC128) {
 			// enable special cartridge RAM as ROM mode and KERNAL hack with HIRAM hack
 			CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIRAM_HACK_ON;
-		
+
 			// trigger initial HIRAM detection and enable KERNAL
 			*((uint8_t*) 1) = 0x37;
-	
+
 			// test KERNAL
 			if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL/HIRAM hack, ROM")) return 0;
-	
+
 			// enable internal C64 RAM under KERNAL
 			*((uint8_t*) 1) = 0x35;
-	
+
 			// test internal C64 RAM under KERNAL
 			ramSetBank(0x100 + i);
 			if (memcmp(g_ram, (uint8_t*) ((i + 0xe0) << 8), 256)) {
@@ -335,17 +337,17 @@ uint8_t testRamAsRom()
 				CART_CONFIG = 0;
 				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 				gotox(0);
-				cprintf("KERNAL HIRAM hack RAM error\r\n");
-				cprintf("bank: %i\r\n", i);
+				cprintf("KERNAL HIRAM hack RAM error\r\n"
+					"bank: %i\r\n", i);
 				enableInterrupts();
 				return 0;
 			}
-	
+
 			// default value
 			*((uint8_t*) 1) = 0x37;
 		}
 	}
-	
+
 	// standard mode
 	CART_CONFIG = 0;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;

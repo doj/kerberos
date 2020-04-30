@@ -1,6 +1,6 @@
 .segment "MUSIC"
 		.incbin "Vomitoxin.sid", $7e
-		
+
 .segment "GRAPHICS"
 leftBlack:
 	        .byte $00, $00, $00
@@ -97,7 +97,6 @@ rightOrange:
 	        .byte $00, $00, $00
 	        .byte $00, $00, $00
 	        .byte 0
-		
 
 .segment "LOWCODE"
 
@@ -105,7 +104,7 @@ rightOrange:
 ;
 ; About music player init
 ;
-; void __fastcall__ aboutInit(void);
+; void __fastcall__ musicInit();
 ;
 ; parameters:
 ;       -
@@ -119,12 +118,11 @@ _musicInit:
 		lda #0
 		jmp $1000
 
-
 ; =============================================================================
 ;
-; About music player and wait for VSync
+; About music player vsync routine
 ;
-; void __fastcall__ aboutPlay(void);
+; void __fastcall__ musicPlay();
 ;
 ; parameters:
 ;       -
@@ -139,9 +137,7 @@ _musicPlay:
 
 ; =============================================================================
 ;
-; About music player and wait for VSync
-;
-; void __fastcall__ aboutPlay(void);
+; void __fastcall__ waitVsync(void);
 ;
 ; parameters:
 ;       -

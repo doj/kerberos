@@ -37,16 +37,22 @@ void configureSettings(void)
 			slotName += '0';
 		}
 		showTitle("Configure Settings");
-		cprintf("I: Mirror MIDI in to MIDI thru: %s\r\n", getConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU) ? "on" : "off");
-		cprintf("O: Mirror MIDI out to MIDI thru: %s\r\n", getConfigValue(KERBEROS_CONFIG_MIDI_OUT_THRU) ? "on" : "off");
-		cputs("\r\n");
-		cprintf("1: Cartridge disk 1 drive number: %i\r\n", getConfigValue(KERBEROS_CONFIG_DRIVE_1));
-		cprintf("2: Cartridge disk 2 drive number: %i\r\n", getConfigValue(KERBEROS_CONFIG_DRIVE_2));
-		cputs("\r\n");
-		cprintf("A: Autostart slot (0=off): %c\r\n", slotName);
-		cputs("\r\n");
-		cputs("S: Save and back\r\n");
-		cputs("\x1f: Back without save\r\n");
+		cprintf("I: Mirror MIDI  in to MIDI thru: %s\r\n"
+			"O: Mirror MIDI out to MIDI thru: %s\r\n"
+			"\r\n"
+			"1: Cartridge disk 1 drive number: %i\r\n"
+			"2: Cartridge disk 2 drive number: %i\r\n"
+			"\r\n"
+			"A: Autostart slot (0=off): %c\r\n"
+			"\r\n"
+			"S: Save and back\r\n"
+			"\x1f: Back without save\r\n"
+			, getConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU) ? "on" : "off"
+			, getConfigValue(KERBEROS_CONFIG_MIDI_OUT_THRU) ? "on" : "off"
+			, getConfigValue(KERBEROS_CONFIG_DRIVE_1)
+			, getConfigValue(KERBEROS_CONFIG_DRIVE_2)
+			, slotName
+			);
 		while (!kbhit());
 		switch (cgetc()) {
 			case 'i':
@@ -72,8 +78,8 @@ void configureSettings(void)
 				break;
 			case 's':
 				if (getConfigValue(KERBEROS_CONFIG_DRIVE_1) == getConfigValue(KERBEROS_CONFIG_DRIVE_2)) {
-					cputs("\r\nPlease choose different drive numbers\r\n");
-					cputs("for the cartridge disks\r\n\r\n");
+					cputs("\r\nPlease choose different drive numbers\r\n"
+					      "for the cartridge disks\r\n\r\n");
 					anyKey();
 					break;
 				}

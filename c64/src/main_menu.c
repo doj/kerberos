@@ -350,15 +350,15 @@ static void __fastcall__ showTrackInfo(const char *str)
 	cprintf("%s\r\n"
             "drv: %s\r\n"
             "num: %i\r\n"
-            "blk: %i\r\n"
             "trk: %i\r\n"
             "sec: %i\r\n"
+            "blk: %i\r\n"
             , str
             , drive == DRIVE_INTERNAL ? "cartridge" : "floppy"
             , number
-            , block
             , track
-            , sector);
+            , sector
+            , block);
 }
 
 static void calculateCartridgeDiskAddress()
@@ -480,8 +480,9 @@ static void __fastcall__ receiveMidiCommands(int received_byte)
 				flashWrite256Block(adr);
 				FLASH_ADDRESS_EXTENSION = flashBank;
 				if (fastCompare256(adr)) {
-					cputs("\r\nflash write error\r\n");
-					cprintf("flash bank: %i\r\n", flashBank);
+					cprintf("\r\nflash write error\r\n"
+                            "flash bank: %i\r\n"
+                            , flashBank);
 					anyKey();
 					return;
 				}
@@ -800,9 +801,8 @@ static void testMidi()
 
 	for (;;) {
 		showTitle("MIDI menu");
-		cputs("n: note on\r\n");
-		cputs("f: note off\r\n");
-		cputs(CRNL);
+		cputs("n: note on\r\n"
+              "f: note off\r\n\r\n");
 		cputs(BACK);
 		cputs(CRNL);
 
@@ -1003,14 +1003,14 @@ int main(void)
         received_midi_byte = -1;
 
 		showTitle("Main Menu");
-		cputs("        S: Start from slot\r\n");
-		cputs("      1-\xF3: start prg  0-12 from slot\r\n");
-		cputs("Shift 1-9: start prg 11-19 from slot\r\n");
-		cputs("        E: EasyFlash start\r\n");
-		cputs("        T: Transfer from PC/Mac\r\n");
-		cputs("        C: Configuration\r\n");
-		cputs("        H: Hardware reset, Kerberos off\r\n");
-		cputs("        R: Reset to C64 BASIC prompt\r\n");
+		cputs("        S: Start from slot\r\n"
+              "      1-\xF3: start prg  0-12 from slot\r\n"
+              "Shift 1-9: start prg 11-19 from slot\r\n"
+              "        E: EasyFlash start\r\n"
+              "        T: Transfer from PC/Mac\r\n"
+              "        C: Configuration\r\n"
+              "        H: Hardware reset, Kerberos off\r\n"
+              "        R: Reset to C64 BASIC prompt\r\n");
 #if USE_MIDI_TEST
 		cputs("        M: MIDI test\r\n");
 #endif

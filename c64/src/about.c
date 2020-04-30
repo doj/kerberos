@@ -9,10 +9,7 @@
 #include "regs.h"
 
 extern uint8_t* g_vicBase;
-extern uint8_t* g_sidBase;
-uint8_t* g_spritePointers = (uint8_t*) 0x7f8;
-uint8_t* g_screenRam = (uint8_t*) 0x0400;
-uint8_t* g_colorRam = (uint8_t*) 0xd800;
+static uint8_t* g_spritePointers = (uint8_t*) 0x7f8;
 
 void __fastcall__ musicInit(void);
 void __fastcall__ musicPlay(void);
@@ -31,7 +28,7 @@ cycle=56
 ampl=50
 [int(math.sin(i/cycle*2*math.pi)*ampl+0.5) for i in range(cycle)]
 */
-int sin[] = {
+static const int sin[56] = {
 	0, 6, 11, 17, 22, 27, 31, 35, 39, 42, 45, 47, 49, 50, 50,
 	50, 49, 47, 45, 42, 39, 35, 31, 27, 22, 17, 11, 6, 0, -5,
 	-10, -16, -21, -26, -30, -34, -38, -41, -44, -46, -48, -49,
@@ -120,8 +117,7 @@ void about(void)
 		sinIndex++;
 		if (sinIndex == 56) {
 			sinIndex = 0;
-			t = t + 1;
-			if (t == 5) {
+			if (++t == 5) {
 				color = 55;
 				t = 0;
 			}
