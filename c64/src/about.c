@@ -130,7 +130,7 @@ void about(void)
 
 		//__asm__ ("inc $d020");
 		musicPlay();
-        enableInterrupts(); // DOJ: check if this enabled kbhit() below
+		enableInterrupts();
 		waitVsync();
 		//__asm__ ("dec $d020");
 		g_vicBase[0] = x;
