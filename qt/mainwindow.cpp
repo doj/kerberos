@@ -2254,8 +2254,14 @@ MainWindow::setMidiDelay(int us)
 {
     (void)us;
 #if defined(HAVE_SENDDELAY)
-    assert(us >= minMidiDelay());
-    assert(us <= maxMidiDelay());
+    if (us < minMidiDelay())
+        {
+            us = minMidiDelay();
+        }
+    if (us > maxMidiDelay())
+        {
+            us = maxMidiDelay();
+        }
     midiDelayUS->setValue(us);
     g_senddelay = us;
 #endif
@@ -2296,7 +2302,7 @@ MainWindow::maxMidiDelay()
 #if defined(HAVE_SENDDELAY)
     return midiDelayUS->maximum();
 #else
-    return 0;
+    return 999999;
 #endif
 }
 
