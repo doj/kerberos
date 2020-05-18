@@ -54,29 +54,6 @@ bool isMidiTransferInProgress() {
     }
 }
 
-class Helper: public QThread {
-public:
-        static void msleep(int ms)
-        {
-                QThread::msleep(ms);
-        }
-
-        static void usleep(int us)
-        {
-	        QThread::usleep(us);
-	}
-};
-
-static void myMsleep(int milliseconds)
-{
-    Helper::msleep(milliseconds);
-}
-
-static void myUsleep(int microseconds)
-{
-    Helper::usleep(microseconds);
-}
-
 const char* g_midiInInterfaceName = "Kerberos MIDI In";
 const char* g_midiOutInterfaceName = "Kerberos MIDI Out";
 
@@ -90,7 +67,6 @@ static int g_senddelay = 800;
 #if defined(__MACOSX_CORE__)
 RtMidiOutCoreMidi g_midiOut( g_midiOutInterfaceName );;
 RtMidiInCoreMidi  g_midiIn( g_midiInInterfaceName );;
-#define HAVE_SENDDELAY 1
 
 #elif defined(__LINUX_ALSASEQ__)
 RtMidiOutAlsa g_midiOut( g_midiOutInterfaceName );
@@ -105,6 +81,34 @@ RtMidiInJack  g_midiIn( g_midiInInterfaceName );;
 #else
 RtMidiOutWinMM g_midiOut( g_midiOutInterfaceName );;
 RtMidiInWinMM  g_midiIn( g_midiInInterfaceName );;
+#endif
+
+class Helper : public QThread
+{
+public:
+    static void msleep(int ms)
+    {
+        QThread::msleep(ms);
+    }
+
+    static void usleep(int us)
+    {
+        QThread::usleep(us);
+	}
+};
+
+static void
+myMsleep(int milliseconds)
+{
+    Helper::msleep(milliseconds);
+}
+
+#ifdef HAVE_SENDDELAY
+static void
+myUsleep(int microseconds)
+{
+    Helper::usleep(microseconds);
+}
 #endif
 
 int g_lastByte;
@@ -217,7 +221,6 @@ static uint8_t ascii2petscii(uint8_t ascii)
 // first byte: tag ID
 // second byte: length
 // last byte in the next data messages: CRC8 checksum
-
 static bool sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
 {
     try {
@@ -226,6 +229,15 @@ static bool sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
         message.push_back(note);
         message.push_back(velocity);
         g_midiOut.sendMessage(&message);
+
+        // send delay to fix MIDI message dropping resulting in CRC errors on the C64.
+#if defined(__MACOSX_CORE__)
+        // it seems that at OsX myUsleep is too fast. sleeping for a millisecond seems to work better.
+        myMsleep(1);
+#endif
+#if defined(HAVE_SENDDELAY)
+        myUsleep(g_senddelay);
+#endif
 /*
          printf("%02x\n", message[0]);
         printf("%02x\n", message[1]);
@@ -342,10 +354,6 @@ static bool midiSendCommand(uint8_t tag, ByteArray data)
             fprintf(stderr, "midiSendCommand: midiSendByte(%02x) failed\n", data[i]);
             return false;
         }
-#if defined(HAVE_SENDDELAY)
-        // send delay to fix ALSA message dropping
-        myUsleep(g_senddelay);
-#endif
         crc8Update(data[i]);
     }
 
