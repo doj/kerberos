@@ -4,7 +4,7 @@ APP=kerberos.app
 
 if [ "$1" = clean -o "$1" = distclean ] ; then
     make distclean
-    rm -rf $APP kerberos.dmg
+    rm -rf $APP kerberos.dmg $APP.zip
     exit 0
 fi
 
@@ -26,4 +26,8 @@ echo 'clean up the build directory with: $ ./build-mac.sh distclean'
 
 if [ "$1" = run ] ; then
     open $APP
+fi
+
+if [ "$1" = zip ] ; then
+    zip -r9 $APP.zip $APP
 fi
