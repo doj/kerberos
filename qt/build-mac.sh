@@ -25,7 +25,9 @@ echo "start the application with: \$ open $APP"
 echo 'clean up the build directory with: $ ./build-mac.sh distclean'
 
 if [ "$1" = run ] ; then
-    open $APP
+    shift
+    open $APP --args "$@"
+    exit 0
 fi
 
 if [ "$1" = zip ] ; then
