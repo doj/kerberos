@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-
-// config keys
+/////// config keys
 
 // 1, if MIDI in is mirrored to MIDI thru
 #define KERBEROS_CONFIG_MIDI_IN_THRU 1
@@ -21,11 +20,13 @@
 // drive number for internal disk drive 2
 #define KERBEROS_CONFIG_DRIVE_2 5
 
+// 1 if transfer can be started from main menu
+#define KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED 6
+
 // end marker
 #define KERBEROS_CONFIG_END 0xff
 
-
-// functions
+/////// functions
 
 // load configs from flash to RAM
 void loadConfigs(void);
@@ -38,6 +39,5 @@ uint8_t getConfigValue(uint8_t key);
 
 // set a config value in RAM
 void setConfigValue(uint8_t key, uint8_t value);
-
 
 #endif

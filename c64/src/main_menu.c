@@ -976,6 +976,7 @@ static void testKerberosHardware()
 int main(void)
 {
     uint8_t i;
+    uint8_t midi_enabled;
     int received_midi_byte;
 	*((uint8_t*)1) = 55;
 	g_isC128 = isC128();
@@ -988,6 +989,8 @@ int main(void)
 
 	// disable Commodore-Shift for upper/lower case switch
 	*((uint8_t*)0x291) = 128;
+
+    midi_enabled = getConfigValue(KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED);
 
 	for (;;) {
         // silence SID
@@ -1032,7 +1035,7 @@ int main(void)
                 i = cgetc();
                 break;
             }
-            if (midiByteReceived()) {
+            if (midi_enabled && midiByteReceived()) {
                 received_midi_byte = midiReadByte();
                 i = 't';
                 break;

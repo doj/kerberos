@@ -44,6 +44,7 @@ void configureSettings(void)
 			"2: Cartridge disk 2 drive number: %i\r\n"
 			"\r\n"
 			"A: Autostart slot (0=off): %c\r\n"
+			"T: always listen on MIDI for transfer: %i\r\n"
 			"\r\n"
 			"S: Save and back\r\n"
 			"\x1f: Back without save\r\n"
@@ -52,8 +53,11 @@ void configureSettings(void)
 			, getConfigValue(KERBEROS_CONFIG_DRIVE_1)
 			, getConfigValue(KERBEROS_CONFIG_DRIVE_2)
 			, slotName
+			, getConfigValue(KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED)
 			);
+		enableInterrupts();
 		while (!kbhit());
+		disableInterrupts();
 		switch (cgetc()) {
 			case 'i':
 				setConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU, !getConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU));
@@ -76,6 +80,9 @@ void configureSettings(void)
 			case '0':
 				setConfigValue(KERBEROS_CONFIG_AUTOSTART_SLOT, 0);
 				break;
+            case 't':
+                setConfigValue(KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED, !getConfigValue(KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED));
+                break;
 			case 's':
 				if (getConfigValue(KERBEROS_CONFIG_DRIVE_1) == getConfigValue(KERBEROS_CONFIG_DRIVE_2)) {
 					cputs("\r\nPlease choose different drive numbers\r\n"
@@ -93,3 +100,17 @@ void configureSettings(void)
 		}
 	}
 }
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// eval: (c-set-offset 'case-label '+)
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//

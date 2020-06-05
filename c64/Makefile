@@ -79,3 +79,6 @@ clean:	gitclean
 gitclean:
 	rm -f menu *.map synthesizer c128-cart.bin vice.label
 	rm -rf obj
+
+x64:	menu.prg
+	x64sc -autostart $<

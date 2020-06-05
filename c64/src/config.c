@@ -21,17 +21,17 @@ void loadConfigs(void)
 {
 	uint8_t checksum;
 	uint8_t i;
-	
+
 	// standard mode
 	CART_CONFIG = 0;
-	
+
 	// /GAME high, /EXROM low
 	CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 
 	// settings start at 0xb000 in flash, flash bank 5 maps 0xa000-0xbfff to 0x8000-0x9fff
 	FLASH_ADDRESS_EXTENSION = 5;
 	memcpy(g_configs, (uint8_t*) 0x9000, 0x100);
-	
+
 	// if wrong checksum, use defaults
 	checksum = calculateChecksum();
 	if (checksum != g_configs[255]) {
@@ -70,6 +70,8 @@ getConfigValue(uint8_t key)
 					return 9;
 				case KERBEROS_CONFIG_DRIVE_2:
 					return 10;
+                case KERBEROS_CONFIG_TRANSFER_ALWAYS_ENABLED:
+                    return 0;
 			}
 			return 0;
 		}
@@ -97,3 +99,17 @@ setConfigValue(uint8_t key, uint8_t value)
 		}
 	}
 }
+
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// eval: (c-set-offset 'case-label '+)
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//
